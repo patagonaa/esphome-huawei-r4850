@@ -75,3 +75,13 @@ number:
       name: Max offline output current
     max_ac_current:
       name: AC input current limit
+
+output:
+  - platform: huawei_r4850
+    fan_duty_cycle:
+      id: r4850_fan_duty
+
+fan:
+  - platform: speed
+    output: r4850_fan_duty
+    name: "PSU Fan"
