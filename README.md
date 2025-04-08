@@ -40,12 +40,12 @@ huawei_r4850:
 ```
 
 - **id**: ID of this component
-- **canbus_id**: ID of the [canbus component](https://esphome.io/components/canbus/) the PSU is attached to
-- **update_interval**: Update interval for sensors
-- **resend_interval**: Resend interval for numbers and switches (so state is consistent even with CAN / PSU disconnects)
-- **psu_address**: Address of the PSU (1 = first PSU, 2 = second, ...)
-- **psu_max_current**: Max current rating of the PSU (~53.5 for R4850G6, ~42.6 for R4830S1).
-  Max current vs. actual current has to be calculated / calibrated if `output_current_setpoint` != `max_output_current`.
+- **canbus_id**: ID of the [CAN Bus component](https://esphome.io/components/canbus/) the PSU is attached to
+- **update_interval** ([Time](https://esphome.io/guides/configuration-types#config-time), Default `5s`): Update interval for sensors
+- **resend_interval** ([Time](https://esphome.io/guides/configuration-types#config-time), Optional): Interval for numbers and switches to resend their state (so state is consistent even with CAN / PSU disconnects)
+- **psu_address** (int, Required): Address of the PSU (1 = first PSU, 2 = second, ...)
+- **psu_max_current** (float, Default `53.5`): Max current rating of the PSU (~53.5 for R4850G6, ~42.6 for R4830S1).  
+  If `output_current_setpoint` != `max_output_current`, Max current vs. actual current has to be calculated / calibrated.
 
 ### Sensors
 
