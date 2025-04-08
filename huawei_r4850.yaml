@@ -73,7 +73,6 @@ sensor:
       name: Input temperature
     output_temp:
       name: Output temperature
-    
 
 number:
   - platform: huawei_r4850
@@ -90,3 +89,9 @@ number:
       name: AC input current limit
     fan_duty_cycle:
       name: Fan duty cycle
+
+switch:
+  - platform: huawei_r4850
+    huawei_r4850_id: huawei_r4850_1
+    standby:
+      name: Standby
