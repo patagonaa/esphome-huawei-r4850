@@ -47,7 +47,19 @@ class HuaweiR4850Component : public PollingComponent {
   }
   void set_output_power_sensor(sensor::Sensor *output_power_sensor) { output_power_sensor_ = output_power_sensor; }
   void set_output_temp_sensor(sensor::Sensor *output_temp_sensor) { output_temp_sensor_ = output_temp_sensor; }
-#endif
+
+  void set_fan_duty_cycle_min_sensor(sensor::Sensor *fan_duty_cycle_min_sensor) { 
+    fan_duty_cycle_min_sensor_ = fan_duty_cycle_min_sensor; 
+    needs_fan_status_ = true;
+  }
+  void set_fan_duty_cycle_target_sensor(sensor::Sensor *fan_duty_cycle_target_sensor) { 
+    fan_duty_cycle_target_sensor_ = fan_duty_cycle_target_sensor; 
+    needs_fan_status_ = true;
+  }
+  void set_fan_rpm_sensor(sensor::Sensor *fan_rpm_sensor) { 
+    fan_rpm_sensor_ = fan_rpm_sensor;
+    needs_fan_status_ = true;
+  }
 #endif // USE_SENSOR
 
   void register_input(HuaweiR4850Input *number) {
@@ -87,6 +99,10 @@ class HuaweiR4850Component : public PollingComponent {
   sensor::Sensor *output_current_setpoint_sensor_{nullptr};
   sensor::Sensor *output_power_sensor_{nullptr};
   sensor::Sensor *output_temp_sensor_{nullptr};
+  sensor::Sensor *fan_duty_cycle_min_sensor_{nullptr};
+  sensor::Sensor *fan_duty_cycle_target_sensor_{nullptr};
+  sensor::Sensor *fan_rpm_sensor_{nullptr};
+  bool needs_fan_status_{0};
   void publish_sensor_state_(sensor::Sensor *sensor, float value);
 #endif // USE_SENSOR
 
