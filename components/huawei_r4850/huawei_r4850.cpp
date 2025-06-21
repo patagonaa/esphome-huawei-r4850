@@ -15,6 +15,7 @@ static const char *const TAG = "huawei_r4850";
 
 static const uint8_t R48xx_CMD_DATA = 0x40;
 static const uint8_t R48xx_CMD_CONTROL = 0x80;
+static const uint8_t R48xx_CMD_REGISTER_GET = 0x82;
 
 static const uint16_t R48xx_DATA_INPUT_POWER = 0x170;
 static const uint16_t R48xx_DATA_INPUT_FREQ = 0x171;
@@ -28,6 +29,7 @@ static const uint16_t R48xx_DATA_OUTPUT_TEMPERATURE = 0x17F;
 static const uint16_t R48xx_DATA_INPUT_TEMPERATURE = 0x180;
 static const uint16_t R48xx_DATA_OUTPUT_CURRENT = 0x181;
 static const uint16_t R48xx_DATA_OUTPUT_CURRENT1 = 0x182;
+static const uint16_t R48xx_DATA_FAN_STATUS = 0x187;
 
 HuaweiR4850Component::HuaweiR4850Component(canbus::Canbus *canbus) { this->canbus = canbus; }
 
@@ -77,9 +79,21 @@ void HuaweiR4850Component::resend_inputs() {
 
 void HuaweiR4850Component::update() {
   ESP_LOGD(TAG, "Sending request message");
-  uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_DATA, true, false);
-  std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
-  this->canbus->send_data(canId, true, data);
+  {
+    uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_DATA, true, false);
+    std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
+    this->canbus->send_data(canId, true, data);
+  }
+
+#ifdef USE_SENSOR
+  if (this->fan_rpm_sensor_ != nullptr) {
+    uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_REGISTER_GET, true, false);
+    std::vector<uint8_t> data = {
+      (uint8_t)((R48xx_DATA_FAN_STATUS & 0xF00) >> 8), (uint8_t)(R48xx_DATA_FAN_STATUS & 0x0FF), 0, 0, 0, 0, 0, 0
+    };
+    this->canbus->send_data(canId, true, data);
+  }
+#endif
 
   // no new value for 5* intervall -> set sensors to NAN)
   if (this->lastUpdate_ != 0 && (millis() - this->lastUpdate_ > this->update_interval_ * 5)) {
@@ -222,6 +236,21 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool rtr, std::vector<uint8
     if (!incomplete) {
       this->lastUpdate_ = millis();
     }
+  } else if (cmd == R48xx_CMD_REGISTER_GET) {
+#ifdef USE_SENSOR
+    float conv_value = 0;
+    switch (register_id) {
+      case R48xx_DATA_FAN_STATUS:
+        conv_value = (message[6] << 8) | message[7];
+        this->publish_sensor_state_(this->fan_rpm_sensor_, conv_value);
+        ESP_LOGV(TAG, "Fan Speed: %f", conv_value);
+        break;
+
+      default:
+        // printf("Unknown parameter 0x%02X, 0x%04X\r\n",frame[1], value);
+        break;
+    }
+#endif // USE_SENSOR
   } else if (cmd == R48xx_CMD_CONTROL) {
     std::vector<uint8_t> data(message.begin() + 2, message.end());
     if (error_type == 0) {

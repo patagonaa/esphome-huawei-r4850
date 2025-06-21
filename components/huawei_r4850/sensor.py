@@ -14,8 +14,10 @@ from esphome.const import (
     UNIT_PERCENT,
     UNIT_CELSIUS,
     UNIT_WATT,
+    UNIT_REVOLUTIONS_PER_MINUTE,
     ICON_PERCENT,
     ICON_CURRENT_AC,
+    ICON_FAN,
 )
 from . import HuaweiR4850Component, CONF_HUAWEI_R4850_ID
 
@@ -32,6 +34,7 @@ CONF_OUTPUT_CURRENT = "output_current"
 CONF_OUTPUT_CURRENT_SETPOINT = "output_current_setpoint"
 CONF_OUTPUT_POWER = "output_power"
 CONF_OUTPUT_TEMP = "output_temp"
+CONF_FAN_RPM = "fan_rpm"
 
 
 TYPES = [
@@ -46,6 +49,7 @@ TYPES = [
     CONF_OUTPUT_CURRENT_SETPOINT,
     CONF_OUTPUT_POWER,
     CONF_OUTPUT_TEMP,
+    CONF_FAN_RPM,
 ]
 
 
@@ -120,6 +124,12 @@ CONFIG_SCHEMA = cv.All(
                 unit_of_measurement=UNIT_CELSIUS,
                 accuracy_decimals=1,
                 device_class=DEVICE_CLASS_TEMPERATURE,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_FAN_RPM): sensor.sensor_schema(
+                unit_of_measurement=UNIT_REVOLUTIONS_PER_MINUTE,
+                icon=ICON_FAN,
+                accuracy_decimals=0,
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
         }
