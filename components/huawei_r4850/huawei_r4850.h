@@ -27,6 +27,7 @@ class HuaweiR4850Component : public PollingComponent {
 
   void set_value(uint16_t register_id, std::vector<uint8_t> &data);
 
+#ifdef USE_SENSOR
   void set_input_voltage_sensor(sensor::Sensor *input_voltage_sensor) { input_voltage_sensor_ = input_voltage_sensor; }
   void set_input_frequency_sensor(sensor::Sensor *input_frequency_sensor) {
     input_frequency_sensor_ = input_frequency_sensor;
@@ -46,6 +47,8 @@ class HuaweiR4850Component : public PollingComponent {
   }
   void set_output_power_sensor(sensor::Sensor *output_power_sensor) { output_power_sensor_ = output_power_sensor; }
   void set_output_temp_sensor(sensor::Sensor *output_temp_sensor) { output_temp_sensor_ = output_temp_sensor; }
+#endif
+#endif // USE_SENSOR
 
   void register_input(HuaweiR4850Input *number) {
     this->registered_inputs_.push_back(number);
@@ -85,7 +88,7 @@ class HuaweiR4850Component : public PollingComponent {
   sensor::Sensor *output_power_sensor_{nullptr};
   sensor::Sensor *output_temp_sensor_{nullptr};
   void publish_sensor_state_(sensor::Sensor *sensor, float value);
-#endif
+#endif // USE_SENSOR
 
   std::vector<HuaweiR4850Input *> registered_inputs_{};
 
