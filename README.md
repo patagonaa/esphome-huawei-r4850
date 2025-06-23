@@ -72,6 +72,9 @@ sensor:
 - **output_current_setpoint**: DC output current limit (based on DC and AC current limits and power limit)
 - **output_power**: DC output power
 - **output_temp**: Output / PCB temperature
+- **fan_duty_cycle_min**: Current minimum fan duty cycle (temperature dependent)
+- **fan_duty_cycle_target**: Current target fan duty cycle)
+- **fan_rpm**: Fan RPM
 
 ### Numbers
 
@@ -101,7 +104,7 @@ If setting one of these values causes the number input to reset, the value was o
 - **output_voltage_default**: Default output voltage
 - **max_output_current_default**: Default output current limit
 - **max_ac_current**: AC input current limit
-- **fan_duty_cycle**: PSU set fan duty cycle
+- **fan_duty_cycle**: PSU set fan duty cycle (0 = auto)
 
 Some of these values are saved persistently to the PSU, some additionally only apply when the PSU loses CAN connection:
 
