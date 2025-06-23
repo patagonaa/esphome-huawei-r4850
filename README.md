@@ -123,10 +123,13 @@ switch:
     huawei_r4850_id: huawei_r4850_1
     standby:
       name: Standby
+    fan_speed_max:
+      name: Fan speed max
 ```
 
 - **huawei_r4850_id**: ID of the main component (required if there are multiple) 
 - **standby**: PSU standby (disables the DC output)
+- **fan_speed_max**: If enabled, forces the fan to full speed (even when the PSU would turn the fan off, which it does when AC input current limit is hit (and set to a low value like 5A) and temperature is <65°C)
 
 
 ### Example config
