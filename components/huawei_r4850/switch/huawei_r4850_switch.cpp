@@ -4,6 +4,7 @@
 namespace esphome {
 namespace huawei_r4850 {
 
+static const int16_t SET_FAN_SPEED_MAX_FUNCTION = 0x134;
 static const int16_t SET_STANDBY_FUNCTION = 0x132;
 
 void HuaweiR4850Switch::write_state(bool state) {
