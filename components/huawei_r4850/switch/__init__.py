@@ -3,7 +3,7 @@ import esphome.config_validation as cv
 from esphome.components import switch
 from esphome.const import (
     CONF_ID,
-    CONF_ICON,
+    CONF_RESTORE_VALUE,
     ICON_FAN,
     ICON_POWER,
 )
@@ -22,8 +22,16 @@ CONFIG_SCHEMA = cv.All(
     cv.Schema(
         {
             cv.GenerateID(CONF_HUAWEI_R4850_ID): cv.use_id(HuaweiR4850Component),
-            cv.Optional(CONF_FAN_SPEED_MAX): switch.switch_schema(HuaweiR4850Switch, icon=ICON_FAN),
-            cv.Optional(CONF_STANDBY): switch.switch_schema(HuaweiR4850Switch, icon=ICON_POWER),
+            cv.Optional(CONF_FAN_SPEED_MAX): switch.switch_schema(HuaweiR4850Switch, icon=ICON_FAN).extend(
+                {
+                    cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+                }
+            ),
+            cv.Optional(CONF_STANDBY): switch.switch_schema(HuaweiR4850Switch, icon=ICON_POWER).extend(
+                {
+                    cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+                }
+            ),
         }
     ).extend(cv.COMPONENT_SCHEMA)
 )
@@ -38,6 +46,8 @@ async def to_code(config):
         await switch.register_switch(var, conf)
         cg.add(getattr(hub, "register_input")(var))
         cg.add(var.set_parent(hub, 0x134))
+        cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
+
     if CONF_STANDBY in config:
         conf = config[CONF_STANDBY]
         var = cg.new_Pvariable(conf[CONF_ID])
@@ -45,3 +55,4 @@ async def to_code(config):
         await switch.register_switch(var, conf)
         cg.add(getattr(hub, "register_input")(var))
         cg.add(var.set_parent(hub, 0x132))
+        cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))

@@ -11,6 +11,19 @@ static const uint16_t SET_DEFAULT_CURRENT_FUNCTION = 0x104;
 static const uint16_t SET_INPUT_CURRENT_FUNCTION = 0x109;
 static const uint16_t SET_FAN_DUTY_CYCLE = 0x114;
 
+void HuaweiR4850Number::setup() {
+  if (this->last_state_.has_value()) // something has already set the values
+    return;
+
+  float value;
+  if (this->restore_value_) {
+    this->pref_ = global_preferences->make_preference<float>(this->get_object_id_hash());
+    if (this->pref_.load(&value)) {
+      this->control(value);
+    }
+  }
+}
+
 void HuaweiR4850Number::set_parent(HuaweiR4850Component *parent, uint16_t registerId) {
   this->parent_ = parent;
   this->registerId_ = registerId;
@@ -18,6 +31,8 @@ void HuaweiR4850Number::set_parent(HuaweiR4850Component *parent, uint16_t regist
 void HuaweiR4850Number::control(float value) {
   this->last_state_ = value;
   this->send_state_(value);
+  if (this->restore_value_)
+    this->pref_.save(&value);
 }
 
 void HuaweiR4850Number::resend_state() {

@@ -7,9 +7,24 @@ namespace huawei_r4850 {
 static const int16_t SET_FAN_SPEED_MAX_FUNCTION = 0x134;
 static const int16_t SET_STANDBY_FUNCTION = 0x132;
 
+void HuaweiR4850Switch::setup() {
+  if (this->last_state_.has_value()) // something has already set the values
+    return;
+
+  bool value;
+  if (this->restore_value_) {
+    this->pref_ = global_preferences->make_preference<bool>(this->get_object_id_hash());
+    if (this->pref_.load(&value)) {
+      this->write_state(value);
+    }
+  }
+}
+
 void HuaweiR4850Switch::write_state(bool state) {
   this->last_state_ = state;
   this->send_state_(state);
+  if (this->restore_value_)
+    this->pref_.save(&state);
 }
 
 void HuaweiR4850Switch::send_state_(bool state) {
