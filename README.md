@@ -9,7 +9,7 @@ Fork of [mb-software/esphome-huawei-r4850](https://github.com/mb-software/esphom
 ## Requirements
 This component is tested and verified to work on ESP32 using the `esp32_can` platform.  
 In addition to the ESP32 board, a CAN transceiver like the SN65HVD230 is required. These can be wired directly to the 3.3V GPIO and supply pins of the ESP32 board.  
-In theory it should work also with the `mcp2515` platform, but this is currently not tested and verified.
+The component has also been tested with the `mcp2515` platform, but due to ESPHome limits (no interrupts, no TX queue, no RX filtering), it's almost guaranteed sensor updates and control messages will be lost, making it unreliable.
 
 ## Configuration
 
