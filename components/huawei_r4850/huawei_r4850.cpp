@@ -34,35 +34,11 @@ static const uint16_t R48xx_DATA_FAN_STATUS = 0x187;
 HuaweiR4850Component::HuaweiR4850Component(canbus::Canbus *canbus) { this->canbus = canbus; }
 
 void HuaweiR4850Component::setup() {
-  Automation<std::vector<uint8_t>, uint32_t, bool> *automation;
-  LambdaAction<std::vector<uint8_t>, uint32_t, bool> *lambdaaction;
-  canbus::CanbusTrigger *canbus_canbustrigger;
-
-  // match the CAN id so we don't get flooded with unsolicited messages / messages from other PSUs.
-  // match for (binary) 0001 0000 1aaa aaaa xxxx xxxx 0111 111x
-  // where a = address, x = don't care
-
-  // example ID
-  // -> 0001 0000 1aaa aaaa 0000 0000 0111 1110
-  uint32_t canid_id = this->canid_pack_(this->psu_addr_, 0x00, false, false);
-
-  // set everything that has to match ID
-  // (proto ID, address, msg src, group mask, hw/sw addr)
-  // -> 1111 1111 1111 1111 0000 0000 1111 1110
-  uint32_t canid_mask = 0xFFFF00FE;
-
-  // all bits masked away by the mask also have to be set 0 on the id
-  assert(canid_id == (canid_id & canid_mask));
-
-  canbus_canbustrigger = new canbus::CanbusTrigger(this->canbus, canid_id, canid_mask, true);
-  canbus_canbustrigger->set_component_source("canbus");
-  App.register_component(canbus_canbustrigger);
-  automation = new Automation<std::vector<uint8_t>, uint32_t, bool>(canbus_canbustrigger);
-  auto cb = [this](std::vector<uint8_t> x, uint32_t can_id, bool remote_transmission_request) -> void {
-    this->on_frame(can_id, remote_transmission_request, x);
+  auto cb = [this](uint32_t can_id, bool extended_id, bool rtr, const std::vector<uint8_t> &data) -> void {
+    this->on_frame(can_id, extended_id, rtr, data);
   };
-  lambdaaction = new LambdaAction<std::vector<uint8_t>, uint32_t, bool>(cb);
-  automation->add_actions({lambdaaction});
+
+  this->canbus->add_callback(cb);
 }
 
 void HuaweiR4850Component::set_resend_interval(uint32_t interval) {
@@ -134,8 +110,8 @@ void HuaweiR4850Component::set_value(uint16_t register_id, std::vector<uint8_t> 
   this->canbus->send_data(canId, true, message);
 }
 
-void HuaweiR4850Component::on_frame(uint32_t can_id, bool rtr, std::vector<uint8_t> &message) {
-  if (message.size() < 8) {
+void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr, const std::vector<uint8_t> &message) {
+  if (message.size() < 8 || !extended_id) {
     return;
   }
 
@@ -144,7 +120,9 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool rtr, std::vector<uint8
   this->canid_unpack_(can_id, &psu_addr, &cmd, &src_controller, &incomplete);
 
   if (psu_addr != this->psu_addr_ || src_controller) {
-    return; // shouldn't happen due to can id mask
+    // not from our PSU -> skip
+    // this used to be handled by a bit mask, but I'm pretty sure this is fast enough as well
+    return;
   }
 
   uint8_t error_type = (message[0] & 0xF0) >> 4;

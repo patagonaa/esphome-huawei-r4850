@@ -108,7 +108,7 @@ class HuaweiR4850Component : public PollingComponent {
 
   std::vector<HuaweiR4850Input *> registered_inputs_{};
 
-  void on_frame(uint32_t can_id, bool rtr, std::vector<uint8_t> &data);
+  void on_frame(uint32_t can_id, bool extended_id, bool rtr, const std::vector<uint8_t> &message);
 
   uint32_t canid_pack_(uint8_t addr, uint8_t command, bool src_controller, bool incomplete);
   void canid_unpack_(uint32_t canId, uint8_t *addr, uint8_t *command, bool *src_controller, bool *incomplete);
