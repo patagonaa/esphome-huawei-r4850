@@ -107,6 +107,7 @@ void HuaweiR4850Component::set_value(uint16_t register_id, std::vector<uint8_t> 
   std::vector<uint8_t> message = {(uint8_t)((register_id & 0xF00) >> 8), (uint8_t)(register_id & 0x0FF)};
   message.insert(message.end(), data.begin(), data.end());
 
+  ESP_LOGD(TAG, "Setting register %03x: %02x %02x %02x %02x %02x %02x", register_id, data[0], data[1], data[2], data[3], data[4], data[5]);
   this->canbus->send_data(canId, true, message);
 }
 
@@ -234,7 +235,7 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
           break;
       }
     } else {
-      ESP_LOGW(TAG, "Value %03x get error: %d", register_id, error_type);
+      ESP_LOGW(TAG, "Register %03x get error: %d", register_id, error_type);
     }
 #endif // USE_SENSOR
   } else if (cmd == R48xx_CMD_CONTROL) {
@@ -243,12 +244,12 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
       for (auto &input : this->registered_inputs_) {
         input->handle_update(register_id, data);
       }
-      ESP_LOGD(TAG, "Value %03x set OK: %02x %02x %02x %02x %02x %02x", register_id, data[0], data[1], data[2], data[3], data[4], data[5]);
+      ESP_LOGD(TAG, "Register %03x set OK: %02x %02x %02x %02x %02x %02x", register_id, data[0], data[1], data[2], data[3], data[4], data[5]);
     } else {
       for (auto &input : this->registered_inputs_) {
         input->handle_error(register_id, data);
       }
-      ESP_LOGW(TAG, "Value %03x set error: %d", register_id, error_type);
+      ESP_LOGW(TAG, "Register %03x set error: %d", register_id, error_type);
     }
   }
 }
