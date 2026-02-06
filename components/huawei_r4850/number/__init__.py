@@ -1,23 +1,23 @@
 import esphome.codegen as cg
-import esphome.config_validation as cv
 from esphome.components import number
+import esphome.config_validation as cv
 from esphome.const import (
-    UNIT_VOLT,
-    UNIT_AMPERE,
-    UNIT_PERCENT,
     CONF_ID,
+    CONF_MAX_VALUE,
+    CONF_MIN_VALUE,
     CONF_MODE,
+    CONF_RESTORE_VALUE,
+    CONF_STEP,
     DEVICE_CLASS_CURRENT,
     DEVICE_CLASS_VOLTAGE,
     ICON_CURRENT_AC,
     ICON_FAN,
-    CONF_MIN_VALUE,
-    CONF_MAX_VALUE,
-    CONF_STEP,
-    CONF_RESTORE_VALUE,
+    UNIT_AMPERE,
+    UNIT_PERCENT,
+    UNIT_VOLT,
 )
 
-from .. import HuaweiR4850Component, huawei_r4850_ns, CONF_HUAWEI_R4850_ID
+from .. import CONF_HUAWEI_R4850_ID, HUAWEI_R4850_COMPONENT_SCHEMA, huawei_r4850_ns
 
 ICON_CURRENT_DC = "mdi:current-dc"
 
@@ -32,93 +32,102 @@ HuaweiR4850Number = huawei_r4850_ns.class_(
     "HuaweiR4850Number", number.Number, cg.Component
 )
 
-CONFIG_SCHEMA = cv.All(
-    cv.Schema(
-        {
-            cv.GenerateID(CONF_HUAWEI_R4850_ID): cv.use_id(HuaweiR4850Component),
-            cv.Optional(CONF_OUTPUT_VOLTAGE): number.number_schema(
-                HuaweiR4850Number,
-                device_class=DEVICE_CLASS_VOLTAGE,
-                unit_of_measurement=UNIT_VOLT
-            ).extend(
-                {
-                    cv.Optional(CONF_MIN_VALUE, default=41.0): cv.float_,
-                    cv.Optional(CONF_MAX_VALUE, default=58.6): cv.float_,
-                    cv.Optional(CONF_STEP, default=0.1): cv.float_,
-                    cv.Optional(CONF_MODE, default="BOX"): cv.enum(number.NUMBER_MODES, upper=True),
-                    cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
-                }
-            ),
-            cv.Optional(CONF_OUTPUT_VOLTAGE_DEFAULT): number.number_schema(
-                HuaweiR4850Number,
-                device_class=DEVICE_CLASS_VOLTAGE,
-                unit_of_measurement=UNIT_VOLT
-            ).extend(
-                {
-                    cv.Optional(CONF_MIN_VALUE, default=48.0): cv.float_,
-                    cv.Optional(CONF_MAX_VALUE, default=58.4): cv.float_,
-                    cv.Optional(CONF_STEP, default=0.1): cv.float_,
-                    cv.Optional(CONF_MODE, default="BOX"): cv.enum(number.NUMBER_MODES, upper=True),
-                    cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
-                }
-            ),
-            cv.Optional(CONF_MAX_OUTPUT_CURRENT): number.number_schema(
-                HuaweiR4850Number,
-                icon=ICON_CURRENT_DC,
-                device_class=DEVICE_CLASS_CURRENT,
-                unit_of_measurement=UNIT_AMPERE
-            ).extend(
-                {
-                    cv.Optional(CONF_MIN_VALUE, default=0.0): cv.float_,
-                    cv.Optional(CONF_MAX_VALUE, default=63.3): cv.float_,
-                    cv.Optional(CONF_STEP, default=0.1): cv.float_,
-                    cv.Optional(CONF_MODE, default="BOX"): cv.enum(number.NUMBER_MODES, upper=True),
-                    cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
-                }
-            ),
-            cv.Optional(CONF_MAX_OUTPUT_CURRENT_DEFAULT): number.number_schema(
-                HuaweiR4850Number,
-                icon=ICON_CURRENT_DC,
-                device_class=DEVICE_CLASS_CURRENT,
-                unit_of_measurement=UNIT_AMPERE
-            ).extend(
-                {
-                    cv.Optional(CONF_MIN_VALUE, default=0.0): cv.float_,
-                    cv.Optional(CONF_MAX_VALUE, default=63.3): cv.float_,
-                    cv.Optional(CONF_STEP, default=0.1): cv.float_,
-                    cv.Optional(CONF_MODE, default="BOX"): cv.enum(number.NUMBER_MODES, upper=True),
-                    cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
-                }
-            ),
-            cv.Optional(CONF_MAX_AC_CURRENT): number.number_schema(
-                HuaweiR4850Number,
-                icon=ICON_CURRENT_AC,
-                device_class=DEVICE_CLASS_CURRENT,
-                unit_of_measurement=UNIT_AMPERE
-            ).extend(
-                {
-                    cv.Optional(CONF_MIN_VALUE, default=0): cv.float_,
-                    cv.Optional(CONF_MAX_VALUE, default=20): cv.float_,
-                    cv.Optional(CONF_STEP, default=0.1): cv.float_,
-                    cv.Optional(CONF_MODE, default="BOX"): cv.enum(number.NUMBER_MODES, upper=True),
-                    cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
-                }
-            ),
-            cv.Optional(CONF_FAN_DUTY_CYCLE): number.number_schema(
-                HuaweiR4850Number,
-                icon=ICON_FAN,
-                unit_of_measurement=UNIT_PERCENT
-            ).extend(
-                {
-                    cv.Optional(CONF_MIN_VALUE, default=0): cv.float_range(min=0, max=100),
-                    cv.Optional(CONF_MAX_VALUE, default=100): cv.float_range(min=0, max=100),
-                    cv.Optional(CONF_STEP, default=1): cv.float_,
-                    cv.Optional(CONF_MODE, default="SLIDER"): cv.enum(number.NUMBER_MODES, upper=True),
-                    cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
-                }
-            ),
-        }
-    ).extend(cv.COMPONENT_SCHEMA)
+CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
+    {
+        cv.Optional(CONF_OUTPUT_VOLTAGE): number.number_schema(
+            HuaweiR4850Number,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            unit_of_measurement=UNIT_VOLT,
+        ).extend(
+            {
+                cv.Optional(CONF_MIN_VALUE, default=41.0): cv.float_,
+                cv.Optional(CONF_MAX_VALUE, default=58.6): cv.float_,
+                cv.Optional(CONF_STEP, default=0.1): cv.float_,
+                cv.Optional(CONF_MODE, default="BOX"): cv.enum(
+                    number.NUMBER_MODES, upper=True
+                ),
+                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+            }
+        ),
+        cv.Optional(CONF_OUTPUT_VOLTAGE_DEFAULT): number.number_schema(
+            HuaweiR4850Number,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            unit_of_measurement=UNIT_VOLT,
+        ).extend(
+            {
+                cv.Optional(CONF_MIN_VALUE, default=48.0): cv.float_,
+                cv.Optional(CONF_MAX_VALUE, default=58.4): cv.float_,
+                cv.Optional(CONF_STEP, default=0.1): cv.float_,
+                cv.Optional(CONF_MODE, default="BOX"): cv.enum(
+                    number.NUMBER_MODES, upper=True
+                ),
+                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+            }
+        ),
+        cv.Optional(CONF_MAX_OUTPUT_CURRENT): number.number_schema(
+            HuaweiR4850Number,
+            icon=ICON_CURRENT_DC,
+            device_class=DEVICE_CLASS_CURRENT,
+            unit_of_measurement=UNIT_AMPERE,
+        ).extend(
+            {
+                cv.Optional(CONF_MIN_VALUE, default=0.0): cv.float_,
+                cv.Optional(CONF_MAX_VALUE, default=63.3): cv.float_,
+                cv.Optional(CONF_STEP, default=0.1): cv.float_,
+                cv.Optional(CONF_MODE, default="BOX"): cv.enum(
+                    number.NUMBER_MODES, upper=True
+                ),
+                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+            }
+        ),
+        cv.Optional(CONF_MAX_OUTPUT_CURRENT_DEFAULT): number.number_schema(
+            HuaweiR4850Number,
+            icon=ICON_CURRENT_DC,
+            device_class=DEVICE_CLASS_CURRENT,
+            unit_of_measurement=UNIT_AMPERE,
+        ).extend(
+            {
+                cv.Optional(CONF_MIN_VALUE, default=0.0): cv.float_,
+                cv.Optional(CONF_MAX_VALUE, default=63.3): cv.float_,
+                cv.Optional(CONF_STEP, default=0.1): cv.float_,
+                cv.Optional(CONF_MODE, default="BOX"): cv.enum(
+                    number.NUMBER_MODES, upper=True
+                ),
+                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+            }
+        ),
+        cv.Optional(CONF_MAX_AC_CURRENT): number.number_schema(
+            HuaweiR4850Number,
+            icon=ICON_CURRENT_AC,
+            device_class=DEVICE_CLASS_CURRENT,
+            unit_of_measurement=UNIT_AMPERE,
+        ).extend(
+            {
+                cv.Optional(CONF_MIN_VALUE, default=0): cv.float_,
+                cv.Optional(CONF_MAX_VALUE, default=20): cv.float_,
+                cv.Optional(CONF_STEP, default=0.1): cv.float_,
+                cv.Optional(CONF_MODE, default="BOX"): cv.enum(
+                    number.NUMBER_MODES, upper=True
+                ),
+                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+            }
+        ),
+        cv.Optional(CONF_FAN_DUTY_CYCLE): number.number_schema(
+            HuaweiR4850Number, icon=ICON_FAN, unit_of_measurement=UNIT_PERCENT
+        ).extend(
+            {
+                cv.Optional(CONF_MIN_VALUE, default=0): cv.float_range(min=0, max=100),
+                cv.Optional(CONF_MAX_VALUE, default=100): cv.float_range(
+                    min=0, max=100
+                ),
+                cv.Optional(CONF_STEP, default=1): cv.float_,
+                cv.Optional(CONF_MODE, default="SLIDER"): cv.enum(
+                    number.NUMBER_MODES, upper=True
+                ),
+                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+            }
+        ),
+    }
 )
 
 
