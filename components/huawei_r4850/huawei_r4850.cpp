@@ -1,6 +1,9 @@
 #include "huawei_r4850.h"
 
 #include <cassert>
+#include <map>
+#include <sstream>
+#include <string>
 
 #include "esphome/core/application.h"
 #include "esphome/core/base_automation.h"
@@ -14,6 +17,7 @@ namespace huawei_r4850 {
 static const char *const TAG = "huawei_r4850";
 
 static const uint8_t R48xx_CMD_DATA = 0x40;
+static const uint8_t R48xx_CMD_ELABEL = 0xD2;
 static const uint8_t R48xx_CMD_CONTROL = 0x80;
 static const uint8_t R48xx_CMD_REGISTER_GET = 0x82;
 
@@ -30,6 +34,35 @@ static const uint16_t R48xx_DATA_INPUT_TEMPERATURE = 0x180;
 static const uint16_t R48xx_DATA_OUTPUT_CURRENT = 0x181;
 static const uint16_t R48xx_DATA_OUTPUT_CURRENT1 = 0x182;
 static const uint16_t R48xx_DATA_FAN_STATUS = 0x187;
+
+typedef std::map<std::string, std::string> ELabelResponse;
+
+ELabelResponse parse_elabel_response(const std::string &raw_response) {
+  ELabelResponse elabel_response;
+
+  // Split by line
+  std::istringstream sstream(raw_response);
+  std::string line;
+
+  while (std::getline(sstream, line, '\n')) {
+    if (line.length() == 0 || line[0] == '/') {
+      continue;
+    }
+
+    // Split by "="
+    size_t pos = line.find("=");
+    if (pos != std::string::npos) {
+      std::string key = line.substr(0, pos);
+      std::string value = line.substr(pos + 1);
+
+      value.erase(std::remove_if(value.begin(), value.end(), ::isspace), value.end());
+
+      elabel_response[key] = value;
+    }
+  }
+
+  return elabel_response;
+}
 
 HuaweiR4850Component::HuaweiR4850Component(canbus::Canbus *canbus) { this->canbus = canbus; }
 
@@ -54,9 +87,17 @@ void HuaweiR4850Component::resend_inputs() {
 }
 
 void HuaweiR4850Component::update() {
-  ESP_LOGD(TAG, "Sending request message");
+  ESP_LOGD(TAG, "Sending data request message");
   {
     uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_DATA, true, false);
+    std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
+    this->canbus->send_data(canId, true, data);
+  }
+
+  // Request E-label response just once
+  if (!has_received_elabel_response_) {
+    ESP_LOGD(TAG, "Sending E-label request message");
+    uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_ELABEL, true, false);
     std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
     this->canbus->send_data(canId, true, data);
   }
@@ -250,6 +291,31 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
       }
       ESP_LOGW(TAG, "Value %03x set error: %d", register_id, error_type);
     }
+  } else if (cmd == R48xx_CMD_ELABEL) {
+    // Compose the full response string until complete
+    std::vector<uint8_t> data(message.begin() + 2, message.end());
+    raw_elabel_response += std::string(data.cbegin(), data.cend());
+
+    if (!incomplete) {
+      ESP_LOGI(TAG, "E-Label response received, populating sensors");
+      ELabelResponse elabel_response = parse_elabel_response(raw_elabel_response);
+
+      std::map<std::string, text_sensor::TextSensor*> sensor_mappings = {
+        {"BoardType", board_type_text_sensor_},
+        {"BarCode", serial_number_text_sensor_},
+        {"Item", item_text_sensor_},
+        {"Model", model_text_sensor_},
+      };
+
+      for (auto const &[key, sensor] : sensor_mappings) {
+        if (elabel_response.contains(key)) {
+          this->publish_sensor_state_(sensor, elabel_response[key].c_str());
+        }
+      }
+
+      ESP_LOGI(TAG, "Will no longer poll for E-label response");
+      has_received_elabel_response_ = true;
+    }
   }
 }
 
@@ -260,6 +326,12 @@ void HuaweiR4850Component::publish_sensor_state_(sensor::Sensor *sensor, float v
   }
 }
 #endif
+
+void HuaweiR4850Component::publish_sensor_state_(text_sensor::TextSensor *sensor, const char *state) {
+  if (sensor) {
+    sensor->publish_state(state);
+  }
+}
 
 uint32_t HuaweiR4850Component::canid_pack_(uint8_t addr, uint8_t command, bool src_controller, bool incomplete) {
   uint32_t id = 0x1080007E; // proto ID, group mask, HW/SW id flag already set
