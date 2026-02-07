@@ -10,6 +10,7 @@ from esphome.const import (
     CONF_STEP,
     DEVICE_CLASS_CURRENT,
     DEVICE_CLASS_VOLTAGE,
+    ENTITY_CATEGORY_CONFIG,
     ICON_CURRENT_AC,
     ICON_FAN,
     UNIT_AMPERE,
@@ -37,6 +38,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
         cv.Optional(CONF_OUTPUT_VOLTAGE): number.number_schema(
             HuaweiR4850Number,
             device_class=DEVICE_CLASS_VOLTAGE,
+            entity_category=ENTITY_CATEGORY_CONFIG,
             unit_of_measurement=UNIT_VOLT,
         ).extend(
             {
@@ -52,6 +54,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
         cv.Optional(CONF_OUTPUT_VOLTAGE_DEFAULT): number.number_schema(
             HuaweiR4850Number,
             device_class=DEVICE_CLASS_VOLTAGE,
+            entity_category=ENTITY_CATEGORY_CONFIG,
             unit_of_measurement=UNIT_VOLT,
         ).extend(
             {
@@ -68,6 +71,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
             HuaweiR4850Number,
             icon=ICON_CURRENT_DC,
             device_class=DEVICE_CLASS_CURRENT,
+            entity_category=ENTITY_CATEGORY_CONFIG,
             unit_of_measurement=UNIT_AMPERE,
         ).extend(
             {
@@ -84,6 +88,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
             HuaweiR4850Number,
             icon=ICON_CURRENT_DC,
             device_class=DEVICE_CLASS_CURRENT,
+            entity_category=ENTITY_CATEGORY_CONFIG,
             unit_of_measurement=UNIT_AMPERE,
         ).extend(
             {
@@ -100,6 +105,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
             HuaweiR4850Number,
             icon=ICON_CURRENT_AC,
             device_class=DEVICE_CLASS_CURRENT,
+            entity_category=ENTITY_CATEGORY_CONFIG,
             unit_of_measurement=UNIT_AMPERE,
         ).extend(
             {
@@ -113,7 +119,10 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
             }
         ),
         cv.Optional(CONF_FAN_DUTY_CYCLE): number.number_schema(
-            HuaweiR4850Number, icon=ICON_FAN, unit_of_measurement=UNIT_PERCENT
+            HuaweiR4850Number,
+            icon=ICON_FAN,
+            entity_category=ENTITY_CATEGORY_CONFIG,
+            unit_of_measurement=UNIT_PERCENT,
         ).extend(
             {
                 cv.Optional(CONF_MIN_VALUE, default=0): cv.float_range(min=0, max=100),
