@@ -299,6 +299,7 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
     if (!incomplete) {
       ESP_LOGI(TAG, "E-Label response received, populating sensors");
       ELabelResponse elabel_response = parse_elabel_response(raw_elabel_response);
+      raw_elabel_response.clear();
 
       std::map<std::string, text_sensor::TextSensor*> sensor_mappings = {
         {"BoardType", board_type_text_sensor_},
