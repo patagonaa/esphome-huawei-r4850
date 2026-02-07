@@ -327,11 +327,13 @@ void HuaweiR4850Component::publish_sensor_state_(sensor::Sensor *sensor, float v
 }
 #endif
 
+#ifdef USE_TEXT_SENSOR
 void HuaweiR4850Component::publish_sensor_state_(text_sensor::TextSensor *sensor, const char *state) {
   if (sensor) {
     sensor->publish_state(state);
   }
 }
+#endif // USE_TEXT_SENSOR
 
 uint32_t HuaweiR4850Component::canid_pack_(uint8_t addr, uint8_t command, bool src_controller, bool incomplete) {
   uint32_t id = 0x1080007E; // proto ID, group mask, HW/SW id flag already set

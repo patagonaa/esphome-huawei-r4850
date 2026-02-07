@@ -62,6 +62,8 @@ class HuaweiR4850Component : public PollingComponent {
     needs_fan_status_ = true;
   }
 #endif // USE_SENSOR
+
+#ifdef USE_TEXT_SENSOR
   void set_board_type_text_sensor(text_sensor::TextSensor *board_type_text_sensor) {
     board_type_text_sensor_ = board_type_text_sensor;
   }
@@ -77,6 +79,7 @@ class HuaweiR4850Component : public PollingComponent {
   void set_model_text_sensor(text_sensor::TextSensor *model_text_sensor) {
     model_text_sensor_ = model_text_sensor;
   }
+#endif // USE_TEXT_SENSOR
 
   void register_input(HuaweiR4850Input *number) {
     this->registered_inputs_.push_back(number);
@@ -124,12 +127,15 @@ class HuaweiR4850Component : public PollingComponent {
   bool needs_fan_status_{0};
   void publish_sensor_state_(sensor::Sensor *sensor, float value);
 #endif // USE_SENSOR
+
+#ifdef USE_TEXT_SENSOR
   void publish_sensor_state_(text_sensor::TextSensor *sensor, const char *state);
 
   text_sensor::TextSensor *board_type_text_sensor_{nullptr};
   text_sensor::TextSensor *serial_number_text_sensor_{nullptr};
   text_sensor::TextSensor *item_text_sensor_{nullptr};
   text_sensor::TextSensor *model_text_sensor_{nullptr};
+#endif // USE_TEXT_SENSOR
 
   std::vector<HuaweiR4850Input *> registered_inputs_{};
 
