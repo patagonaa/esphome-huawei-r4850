@@ -1,7 +1,13 @@
 import esphome.codegen as cg
 from esphome.components import switch
 import esphome.config_validation as cv
-from esphome.const import CONF_ID, CONF_RESTORE_VALUE, ICON_FAN, ICON_POWER
+from esphome.const import (
+    CONF_ID,
+    CONF_RESTORE_VALUE,
+    ENTITY_CATEGORY_CONFIG,
+    ICON_FAN,
+    ICON_POWER,
+)
 
 from .. import CONF_HUAWEI_R4850_ID, HUAWEI_R4850_COMPONENT_SCHEMA, huawei_r4850_ns
 
@@ -15,14 +21,14 @@ HuaweiR4850Switch = huawei_r4850_ns.class_(
 CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
     {
         cv.Optional(CONF_FAN_SPEED_MAX): switch.switch_schema(
-            HuaweiR4850Switch, icon=ICON_FAN
+            HuaweiR4850Switch, icon=ICON_FAN, entity_category=ENTITY_CATEGORY_CONFIG
         ).extend(
             {
                 cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
             }
         ),
         cv.Optional(CONF_STANDBY): switch.switch_schema(
-            HuaweiR4850Switch, icon=ICON_POWER
+            HuaweiR4850Switch, icon=ICON_POWER, entity_category=ENTITY_CATEGORY_CONFIG
         ).extend(
             {
                 cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
