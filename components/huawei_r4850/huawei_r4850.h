@@ -5,6 +5,7 @@
 #ifdef USE_SENSOR
 #include "esphome/components/sensor/sensor.h"
 #endif
+#include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/canbus/canbus.h"
 
 namespace esphome {
@@ -48,19 +49,37 @@ class HuaweiR4850Component : public PollingComponent {
   void set_output_power_sensor(sensor::Sensor *output_power_sensor) { output_power_sensor_ = output_power_sensor; }
   void set_output_temp_sensor(sensor::Sensor *output_temp_sensor) { output_temp_sensor_ = output_temp_sensor; }
 
-  void set_fan_duty_cycle_min_sensor(sensor::Sensor *fan_duty_cycle_min_sensor) { 
-    fan_duty_cycle_min_sensor_ = fan_duty_cycle_min_sensor; 
+  void set_fan_duty_cycle_min_sensor(sensor::Sensor *fan_duty_cycle_min_sensor) {
+    fan_duty_cycle_min_sensor_ = fan_duty_cycle_min_sensor;
     needs_fan_status_ = true;
   }
-  void set_fan_duty_cycle_target_sensor(sensor::Sensor *fan_duty_cycle_target_sensor) { 
-    fan_duty_cycle_target_sensor_ = fan_duty_cycle_target_sensor; 
+  void set_fan_duty_cycle_target_sensor(sensor::Sensor *fan_duty_cycle_target_sensor) {
+    fan_duty_cycle_target_sensor_ = fan_duty_cycle_target_sensor;
     needs_fan_status_ = true;
   }
-  void set_fan_rpm_sensor(sensor::Sensor *fan_rpm_sensor) { 
+  void set_fan_rpm_sensor(sensor::Sensor *fan_rpm_sensor) {
     fan_rpm_sensor_ = fan_rpm_sensor;
     needs_fan_status_ = true;
   }
 #endif // USE_SENSOR
+
+#ifdef USE_TEXT_SENSOR
+  void set_board_type_text_sensor(text_sensor::TextSensor *board_type_text_sensor) {
+    board_type_text_sensor_ = board_type_text_sensor;
+  }
+
+  void set_serial_number_text_sensor(text_sensor::TextSensor *serial_number_text_sensor) {
+    serial_number_text_sensor_ = serial_number_text_sensor;
+  }
+
+  void set_item_text_sensor(text_sensor::TextSensor *info_text_sensor) {
+    item_text_sensor_ = info_text_sensor;
+  }
+
+  void set_model_text_sensor(text_sensor::TextSensor *model_text_sensor) {
+    model_text_sensor_ = model_text_sensor;
+  }
+#endif // USE_TEXT_SENSOR
 
   void register_input(HuaweiR4850Input *number) {
     this->registered_inputs_.push_back(number);
@@ -87,6 +106,9 @@ class HuaweiR4850Component : public PollingComponent {
   float psu_max_current_;
   uint8_t psu_addr_;
 
+  bool has_received_elabel_response_ = false;
+  std::string raw_elabel_response;
+
 #ifdef USE_SENSOR
   sensor::Sensor *input_voltage_sensor_{nullptr};
   sensor::Sensor *input_frequency_sensor_{nullptr};
@@ -105,6 +127,15 @@ class HuaweiR4850Component : public PollingComponent {
   bool needs_fan_status_{0};
   void publish_sensor_state_(sensor::Sensor *sensor, float value);
 #endif // USE_SENSOR
+
+#ifdef USE_TEXT_SENSOR
+  void publish_sensor_state_(text_sensor::TextSensor *sensor, const char *state);
+
+  text_sensor::TextSensor *board_type_text_sensor_{nullptr};
+  text_sensor::TextSensor *serial_number_text_sensor_{nullptr};
+  text_sensor::TextSensor *item_text_sensor_{nullptr};
+  text_sensor::TextSensor *model_text_sensor_{nullptr};
+#endif // USE_TEXT_SENSOR
 
   std::vector<HuaweiR4850Input *> registered_inputs_{};
 
