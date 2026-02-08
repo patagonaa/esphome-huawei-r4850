@@ -20,6 +20,7 @@ static const uint8_t R48xx_CMD_DATA = 0x40;
 static const uint8_t R48xx_CMD_ELABEL = 0xD2;
 static const uint8_t R48xx_CMD_CONTROL = 0x80;
 static const uint8_t R48xx_CMD_REGISTER_GET = 0x82;
+static const uint8_t R48xx_CMD_UNSOLICITED = 0x11;
 
 static const uint16_t R48xx_DATA_INPUT_POWER = 0x170;
 static const uint16_t R48xx_DATA_INPUT_FREQ = 0x171;
@@ -87,9 +88,11 @@ void HuaweiR4850Component::resend_inputs() {
 }
 
 void HuaweiR4850Component::update() {
-  ESP_LOGD(TAG, "Sending data request message");
-  {
-    uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_DATA, true, false);
+  // Don't bother polling until the bus is determined to be active
+  if (canbus_connectivity) {
+    ESP_LOGD(TAG, "Sending data request message");
+    {
+      uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_DATA, true, false);
     std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
     this->canbus->send_data(canId, true, data);
   }
@@ -108,9 +111,10 @@ void HuaweiR4850Component::update() {
     std::vector<uint8_t> data = {
       (uint8_t)((R48xx_DATA_FAN_STATUS & 0xF00) >> 8), (uint8_t)(R48xx_DATA_FAN_STATUS & 0x0FF), 0, 0, 0, 0, 0, 0
     };
-    this->canbus->send_data(canId, true, data);
+      this->canbus->send_data(canId, true, data);
+    }
+  #endif
   }
-#endif
 
   // no new value for 5* intervall -> set sensors to NAN)
   if (this->lastUpdate_ != 0 && (millis() - this->lastUpdate_ > this->update_interval_ * 5)) {
@@ -133,6 +137,12 @@ void HuaweiR4850Component::update() {
     }
 
     this->lastUpdate_ = 0; // reset lastUpdate so we don't publish NaN every interval
+  }
+
+  // no new unsolicited messages during the last update interval, mark as bad
+  if (canbus_connectivity && last_unsolicited_message_ != 0 && (millis() - last_unsolicited_message_ > update_interval_)) {
+    canbus_connectivity = false;
+    ESP_LOGW(TAG, "No unsolicited messages received lately, stopping polling");
   }
 }
 
@@ -318,6 +328,13 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
 
       ESP_LOGI(TAG, "Will no longer poll for E-label response");
       has_received_elabel_response_ = true;
+    }
+  } else if (cmd == R48xx_CMD_UNSOLICITED) {
+    last_unsolicited_message_ = millis();
+
+    if (!canbus_connectivity) {
+      canbus_connectivity = true;
+      ESP_LOGI(TAG, "Got unsolicited messages on CAN bus, resuming polling");
     }
   }
 }

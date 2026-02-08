@@ -110,6 +110,8 @@ class HuaweiR4850Component : public PollingComponent {
 
   bool has_received_elabel_response_ = false;
   std::string raw_elabel_response;
+  uint32_t last_unsolicited_message_{0};
+  bool canbus_connectivity = false;
 
 #ifdef USE_SENSOR
   sensor::Sensor *input_voltage_sensor_{nullptr};
