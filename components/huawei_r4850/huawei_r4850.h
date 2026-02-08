@@ -5,6 +5,9 @@
 #ifdef USE_SENSOR
 #include "esphome/components/sensor/sensor.h"
 #endif
+#ifdef USE_BINARY_SENSOR
+#include "esphome/components/binary_sensor/binary_sensor.h"
+#endif
 #ifdef USE_TEXT_SENSOR
 #include "esphome/components/text_sensor/text_sensor.h"
 #endif
@@ -83,6 +86,12 @@ class HuaweiR4850Component : public PollingComponent {
   }
 #endif // USE_TEXT_SENSOR
 
+#ifdef USE_BINARY_SENSOR
+  void set_canbus_connectivity_binary_sensor(binary_sensor::BinarySensor *sensor) {
+    canbus_connectivity_binary_sensor_ = sensor;
+  }
+#endif // USE_BINARY_SENSOR
+
   void register_input(HuaweiR4850Input *number) {
     this->registered_inputs_.push_back(number);
   }
@@ -140,6 +149,12 @@ class HuaweiR4850Component : public PollingComponent {
   text_sensor::TextSensor *item_text_sensor_{nullptr};
   text_sensor::TextSensor *model_text_sensor_{nullptr};
 #endif // USE_TEXT_SENSOR
+
+#ifdef USE_BINARY_SENSOR
+  void publish_sensor_state_(binary_sensor::BinarySensor *sensor, bool value);
+
+  binary_sensor::BinarySensor *canbus_connectivity_binary_sensor_{nullptr};
+#endif // USE_BINARY_SENSOR
 
   std::vector<HuaweiR4850Input *> registered_inputs_{};
 

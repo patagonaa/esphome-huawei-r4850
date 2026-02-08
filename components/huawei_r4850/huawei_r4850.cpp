@@ -93,24 +93,24 @@ void HuaweiR4850Component::update() {
     ESP_LOGD(TAG, "Sending data request message");
     {
       uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_DATA, true, false);
-    std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
-    this->canbus->send_data(canId, true, data);
-  }
+      std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
+      this->canbus->send_data(canId, true, data);
+    }
 
-  // Request E-label response just once
-  if (!has_received_elabel_response_) {
-    ESP_LOGD(TAG, "Sending E-label request message");
-    uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_ELABEL, true, false);
-    std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
-    this->canbus->send_data(canId, true, data);
-  }
+    // Request E-label response just once
+    if (!has_received_elabel_response_) {
+      ESP_LOGD(TAG, "Sending E-label request message");
+      uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_ELABEL, true, false);
+      std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
+      this->canbus->send_data(canId, true, data);
+    }
 
-#ifdef USE_SENSOR
-  if (this->needs_fan_status_) {
-    uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_REGISTER_GET, true, false);
-    std::vector<uint8_t> data = {
-      (uint8_t)((R48xx_DATA_FAN_STATUS & 0xF00) >> 8), (uint8_t)(R48xx_DATA_FAN_STATUS & 0x0FF), 0, 0, 0, 0, 0, 0
-    };
+  #ifdef USE_SENSOR
+    if (this->needs_fan_status_) {
+      uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_REGISTER_GET, true, false);
+      std::vector<uint8_t> data = {
+        (uint8_t)((R48xx_DATA_FAN_STATUS & 0xF00) >> 8), (uint8_t)(R48xx_DATA_FAN_STATUS & 0x0FF), 0, 0, 0, 0, 0, 0
+      };
       this->canbus->send_data(canId, true, data);
     }
   #endif
@@ -143,6 +143,10 @@ void HuaweiR4850Component::update() {
   if (canbus_connectivity && last_unsolicited_message_ != 0 && (millis() - last_unsolicited_message_ > update_interval_)) {
     canbus_connectivity = false;
     ESP_LOGW(TAG, "No unsolicited messages received lately, stopping polling");
+
+#ifdef USE_BINARY_SENSOR
+    this->publish_sensor_state_(canbus_connectivity_binary_sensor_, false);
+#endif // USE_BINARY_SENSOR
   }
 }
 
@@ -335,6 +339,10 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
     if (!canbus_connectivity) {
       canbus_connectivity = true;
       ESP_LOGI(TAG, "Got unsolicited messages on CAN bus, resuming polling");
+
+#ifdef USE_BINARY_SENSOR
+      this->publish_sensor_state_(canbus_connectivity_binary_sensor_, true);
+#endif // USE_BINARY_SENSOR
     }
   }
 }
@@ -354,6 +362,14 @@ void HuaweiR4850Component::publish_sensor_state_(text_sensor::TextSensor *sensor
   }
 }
 #endif // USE_TEXT_SENSOR
+
+#ifdef USE_BINARY_SENSOR
+void HuaweiR4850Component::publish_sensor_state_(binary_sensor::BinarySensor *sensor, bool state) {
+  if (sensor) {
+    sensor->publish_state(state);
+  }
+}
+#endif
 
 uint32_t HuaweiR4850Component::canid_pack_(uint8_t addr, uint8_t command, bool src_controller, bool incomplete) {
   uint32_t id = 0x1080007E; // proto ID, group mask, HW/SW id flag already set
