@@ -347,30 +347,6 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
   }
 }
 
-#ifdef USE_SENSOR
-void HuaweiR4850Component::publish_sensor_state_(sensor::Sensor *sensor, float value) {
-  if (sensor) {
-    sensor->publish_state(value);
-  }
-}
-#endif
-
-#ifdef USE_TEXT_SENSOR
-void HuaweiR4850Component::publish_sensor_state_(text_sensor::TextSensor *sensor, const char *state) {
-  if (sensor) {
-    sensor->publish_state(state);
-  }
-}
-#endif // USE_TEXT_SENSOR
-
-#ifdef USE_BINARY_SENSOR
-void HuaweiR4850Component::publish_sensor_state_(binary_sensor::BinarySensor *sensor, bool state) {
-  if (sensor) {
-    sensor->publish_state(state);
-  }
-}
-#endif
-
 uint32_t HuaweiR4850Component::canid_pack_(uint8_t addr, uint8_t command, bool src_controller, bool incomplete) {
   uint32_t id = 0x1080007E; // proto ID, group mask, HW/SW id flag already set
   id |= (uint32_t)(addr & 0x7F) << 16; // 7 bit PSU address (0 = broadcast, 1 = first, ...)
