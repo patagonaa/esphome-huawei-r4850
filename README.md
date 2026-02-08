@@ -7,8 +7,8 @@ ESPHome component to control and read values from Huawei R48xx power supplies vi
 Fork of [mb-software/esphome-huawei-r4850](https://github.com/mb-software/esphome-huawei-r4850).
 
 ## Requirements
-This component is tested and verified to work on ESP32 using the `esp32_can` platform.  
-In addition to the ESP32 board, a CAN transceiver like the SN65HVD230 is required. These can be wired directly to the 3.3V GPIO and supply pins of the ESP32 board.  
+This component is tested and verified to work on ESP32 using the `esp32_can` platform.
+In addition to the ESP32 board, a CAN transceiver like the SN65HVD230 is required. These can be wired directly to the 3.3V GPIO and supply pins of the ESP32 board.
 The component has also been tested with the `mcp2515` platform, but due to ESPHome limits (no interrupts, no TX queue, no RX filtering), it's almost guaranteed sensor updates and control messages will be lost, making it unreliable.
 
 ## Configuration
@@ -44,7 +44,7 @@ huawei_r4850:
 - **update_interval** ([Time](https://esphome.io/guides/configuration-types#config-time), Default `5s`): Update interval for sensors
 - **resend_interval** ([Time](https://esphome.io/guides/configuration-types#config-time), Optional): Interval for numbers and switches to resend their state (so state is consistent even with CAN / PSU disconnects)
 - **psu_address** (int, Required): Address of the PSU (1 = first PSU, 2 = second, ...)
-- **psu_max_current** (float, Default `53.5`): Max current rating of the PSU (~53.5 for R4850G6, ~42.6 for R4830S1).  
+- **psu_max_current** (float, Default `53.5`): Max current rating of the PSU (~53.5 for R4850G6, ~42.6 for R4830S1).
   If `output_current_setpoint` != `max_output_current`, Max current vs. actual current has to be calculated / calibrated.
 
 ### Sensors
@@ -60,7 +60,7 @@ sensor:
     # [...]
 ```
 
-- **huawei_r4850_id**: ID of the main component (required if there are multiple) 
+- **huawei_r4850_id**: ID of the main component (required if there are multiple)
 - **input_voltage**: AC input voltage
 - **input_frequency**: AC input frequency
 - **input_current**: AC input current
@@ -98,7 +98,7 @@ number:
 
 If setting one of these values causes the number input to reset, the value was out of range for the PSU. In that case it makes sense to limit the value range using `min_value` and `max_value` on the number.
 
-- **huawei_r4850_id**: ID of the main component (required if there are multiple) 
+- **huawei_r4850_id**: ID of the main component (required if there are multiple)
 - **output_voltage**: Output voltage
 - **max_output_current**: Output current limit
 - **output_voltage_default**: Default output voltage
@@ -130,10 +130,45 @@ switch:
       name: Fan speed max
 ```
 
-- **huawei_r4850_id**: ID of the main component (required if there are multiple) 
+- **huawei_r4850_id**: ID of the main component (required if there are multiple)
 - **standby**: PSU standby (disables the DC output)
 - **fan_speed_max**: If enabled, forces the fan to full speed (even when the PSU would turn the fan off, which it does when AC input current limit is hit (and set to a low value like 5A) and temperature is <65°C)
 
+### Text sensors
+
+```yaml
+text_sensor:
+  - platform: huawei_r4850
+    huawei_r4850_id: huawei_r4850_1
+    board_type:
+      name: "Board type"
+    serial_number:
+      name: "Serial number"
+    item:
+      name: "Item"
+    # Not all models expose this information
+    #model:
+    #  name: "Model"
+```
+
+- **huawei_r4850_id**: ID of the main component (required if there are multiple)
+- **board_type**: Board-specific information, e.g. "EN1MRF7G1A5"
+- **serial_number**: The device serial number (seen on the sticker, e.g. BT2440636718)
+- **item**: The "item", basically an internal model name (e.g. 02312NFE-002)
+- **model**: The model, e.g. R4875G5 (not always available)
+
+### Binary sensors
+
+```yaml
+binary_sensor:
+  - platform: huawei_r4850
+    huawei_r4850_id: huawei_r4850_1
+    canbus_connectivity:
+      name: "CAN bus connectivity"
+```
+
+- **huawei_r4850_id**: ID of the main component (required if there are multiple)
+- **canbus_connectivity**: Indicates whether the communication on the CAN bus is working. If you have multiple units connected it makes sense to enable this sensor only for one of them.
 
 ### Example config
 
