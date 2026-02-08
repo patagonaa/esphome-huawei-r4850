@@ -301,6 +301,7 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
       ELabelResponse elabel_response = parse_elabel_response(raw_elabel_response);
       raw_elabel_response.clear();
 
+#ifdef USE_TEXT_SENSOR
       std::map<std::string, text_sensor::TextSensor*> sensor_mappings = {
         {"BoardType", board_type_text_sensor_},
         {"BarCode", serial_number_text_sensor_},
@@ -313,6 +314,7 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
           this->publish_sensor_state_(sensor, elabel_response[key].c_str());
         }
       }
+#endif // USE_TEXT_SENSOR
 
       ESP_LOGI(TAG, "Will no longer poll for E-label response");
       has_received_elabel_response_ = true;
