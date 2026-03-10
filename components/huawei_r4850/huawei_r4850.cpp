@@ -116,8 +116,10 @@ void HuaweiR4850Component::update() {
   #endif
   }
 
-  // no new unsolicited messages during the last update interval, mark as bad
-  if (canbus_connectivity_ && last_unsolicited_message_ != 0 && (millis() - last_unsolicited_message_ > update_interval_)) {
+  // no recent unsolicited messages, mark as bad
+  // unsolicited messages should be received every ~377ms.
+  // wait at least 500ms to make sure one was actually supposed to arrive.
+  if (canbus_connectivity_ && last_unsolicited_message_ != 0 && (millis() - last_unsolicited_message_ > std::max(update_interval_, 500))) {
     canbus_connectivity_ = false;
     ESP_LOGW(TAG, "No unsolicited messages received lately, stopping polling");
 
