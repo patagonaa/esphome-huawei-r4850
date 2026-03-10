@@ -7,8 +7,8 @@ ESPHome component to control and read values from Huawei R48xx power supplies vi
 Fork of [mb-software/esphome-huawei-r4850](https://github.com/mb-software/esphome-huawei-r4850).
 
 ## Requirements
-This component is tested and verified to work on ESP32 using the `esp32_can` platform.
-In addition to the ESP32 board, a CAN transceiver like the SN65HVD230 is required. These can be wired directly to the 3.3V GPIO and supply pins of the ESP32 board.
+This component is tested and verified to work on ESP32 using the `esp32_can` platform.  
+In addition to the ESP32 board, a CAN transceiver like the SN65HVD230 is required. These can be wired directly to the 3.3V GPIO and supply pins of the ESP32 board.  
 The component has also been tested with the `mcp2515` platform, but due to ESPHome limits (no interrupts, no TX queue, no RX filtering), it's almost guaranteed sensor updates and control messages will be lost, making it unreliable.
 
 ## Configuration
@@ -44,7 +44,7 @@ huawei_r4850:
 - **update_interval** ([Time](https://esphome.io/guides/configuration-types#config-time), Default `5s`): Update interval for sensors
 - **resend_interval** ([Time](https://esphome.io/guides/configuration-types#config-time), Optional): Interval for numbers and switches to resend their state (so state is consistent even with CAN / PSU disconnects)
 - **psu_address** (int, Required): Address of the PSU (1 = first PSU, 2 = second, ...)
-- **psu_max_current** (float, Default `53.5`): Max current rating of the PSU (~53.5 for R4850G6, ~42.6 for R4830S1).
+- **psu_max_current** (float, Default `53.5`): Max current rating of the PSU (~53.5 for R4850G6, ~42.6 for R4830S1).  
   If `output_current_setpoint` != `max_output_current`, Max current vs. actual current has to be calculated / calibrated.
 
 ### Sensors
