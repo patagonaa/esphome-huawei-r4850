@@ -95,3 +95,22 @@ switch:
     huawei_r4850_id: huawei_r4850_1
     standby:
       name: Standby
+
+text_sensor:
+  - platform: huawei_r4850
+    huawei_r4850_id: huawei_r4850_1
+    board_type:
+      name: "Board type"
+    serial_number:
+      name: "Serial number"
+    item:
+      name: "Item"
+    # Not all models expose this information
+    #model:
+    #  name: "Model"
+
+binary_sensor:
+  - platform: huawei_r4850
+    huawei_r4850_id: huawei_r4850_1
+    canbus_connectivity:
+      name: "CAN bus connectivity"

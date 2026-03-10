@@ -20,6 +20,7 @@ static const uint8_t R48xx_CMD_DATA = 0x40;
 static const uint8_t R48xx_CMD_ELABEL = 0xD2;
 static const uint8_t R48xx_CMD_CONTROL = 0x80;
 static const uint8_t R48xx_CMD_REGISTER_GET = 0x82;
+static const uint8_t R48xx_CMD_UNSOLICITED = 0x11;
 
 static const uint16_t R48xx_DATA_INPUT_POWER = 0x170;
 static const uint16_t R48xx_DATA_INPUT_FREQ = 0x171;
@@ -79,7 +80,7 @@ void HuaweiR4850Component::set_resend_interval(uint32_t interval) {
 }
 
 void HuaweiR4850Component::resend_inputs() {
-  if (this->lastUpdate_ != 0) {
+  if (canbus_connectivity_) {
     for (auto &input : this->registered_inputs_) {
       input->resend_state();
     }
@@ -87,33 +88,46 @@ void HuaweiR4850Component::resend_inputs() {
 }
 
 void HuaweiR4850Component::update() {
-  ESP_LOGD(TAG, "Sending data request message");
-  {
-    uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_DATA, true, false);
-    std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
-    this->canbus->send_data(canId, true, data);
+  // Don't bother polling until the bus is determined to be active
+  if (canbus_connectivity_) {
+    ESP_LOGD(TAG, "Sending data request message");
+    {
+      uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_DATA, true, false);
+      std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
+      this->canbus->send_data(canId, true, data);
+    }
+
+    // Request E-label response just once
+    if (!has_received_elabel_response_) {
+      ESP_LOGD(TAG, "Sending E-label request message");
+      uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_ELABEL, true, false);
+      std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
+      this->canbus->send_data(canId, true, data);
+    }
+
+  #ifdef USE_SENSOR
+    if (this->needs_fan_status_) {
+      uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_REGISTER_GET, true, false);
+      std::vector<uint8_t> data = {
+        (uint8_t)((R48xx_DATA_FAN_STATUS & 0xF00) >> 8), (uint8_t)(R48xx_DATA_FAN_STATUS & 0x0FF), 0, 0, 0, 0, 0, 0
+      };
+      this->canbus->send_data(canId, true, data);
+    }
+  #endif
   }
 
-  // Request E-label response just once
-  if (!has_received_elabel_response_) {
-    ESP_LOGD(TAG, "Sending E-label request message");
-    uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_ELABEL, true, false);
-    std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
-    this->canbus->send_data(canId, true, data);
-  }
+  // no recent unsolicited messages, mark as bad
+  // unsolicited messages should be received every ~377ms.
+  // wait at least 500ms to make sure one was actually supposed to arrive.
+  if (canbus_connectivity_ && last_unsolicited_message_ != 0 && (millis() - last_unsolicited_message_ > std::max<uint32_t>(update_interval_, 500))) {
+    canbus_connectivity_ = false;
+    ESP_LOGW(TAG, "No unsolicited messages received lately, stopping polling");
 
-#ifdef USE_SENSOR
-  if (this->needs_fan_status_) {
-    uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_REGISTER_GET, true, false);
-    std::vector<uint8_t> data = {
-      (uint8_t)((R48xx_DATA_FAN_STATUS & 0xF00) >> 8), (uint8_t)(R48xx_DATA_FAN_STATUS & 0x0FF), 0, 0, 0, 0, 0, 0
-    };
-    this->canbus->send_data(canId, true, data);
-  }
-#endif
+#ifdef USE_BINARY_SENSOR
+    this->publish_sensor_state_(canbus_connectivity_binary_sensor_, false);
+#endif // USE_BINARY_SENSOR
 
-  // no new value for 5* intervall -> set sensors to NAN)
-  if (this->lastUpdate_ != 0 && (millis() - this->lastUpdate_ > this->update_interval_ * 5)) {
+    // canbus disconnected -> set sensors to NAN
 #ifdef USE_SENSOR
     this->publish_sensor_state_(this->input_power_sensor_, NAN);
     this->publish_sensor_state_(this->input_voltage_sensor_, NAN);
@@ -131,8 +145,6 @@ void HuaweiR4850Component::update() {
     for (auto &input : this->registered_inputs_) {
       input->handle_timeout();
     }
-
-    this->lastUpdate_ = 0; // reset lastUpdate so we don't publish NaN every interval
   }
 }
 
@@ -252,9 +264,6 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
         break;
     }
 #endif // USE_SENSOR
-    if (!incomplete) {
-      this->lastUpdate_ = millis();
-    }
   } else if (cmd == R48xx_CMD_REGISTER_GET) {
 #ifdef USE_SENSOR
     if (error_type == 0) {
@@ -294,13 +303,14 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
   } else if (cmd == R48xx_CMD_ELABEL) {
     // Compose the full response string until complete
     std::vector<uint8_t> data(message.begin() + 2, message.end());
-    raw_elabel_response += std::string(data.cbegin(), data.cend());
+    raw_elabel_response_ += std::string(data.cbegin(), data.cend());
 
     if (!incomplete) {
       ESP_LOGI(TAG, "E-Label response received, populating sensors");
-      ELabelResponse elabel_response = parse_elabel_response(raw_elabel_response);
-      raw_elabel_response.clear();
+      ELabelResponse elabel_response = parse_elabel_response(raw_elabel_response_);
+      raw_elabel_response_.clear();
 
+#ifdef USE_TEXT_SENSOR
       std::map<std::string, text_sensor::TextSensor*> sensor_mappings = {
         {"BoardType", board_type_text_sensor_},
         {"BarCode", serial_number_text_sensor_},
@@ -313,28 +323,24 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
           this->publish_sensor_state_(sensor, elabel_response[key].c_str());
         }
       }
+#endif // USE_TEXT_SENSOR
 
       ESP_LOGI(TAG, "Will no longer poll for E-label response");
       has_received_elabel_response_ = true;
     }
-  }
-}
+  } else if (cmd == R48xx_CMD_UNSOLICITED) {
+    last_unsolicited_message_ = millis();
 
-#ifdef USE_SENSOR
-void HuaweiR4850Component::publish_sensor_state_(sensor::Sensor *sensor, float value) {
-  if (sensor) {
-    sensor->publish_state(value);
-  }
-}
-#endif
+    if (!canbus_connectivity_) {
+      canbus_connectivity_ = true;
+      ESP_LOGI(TAG, "Got unsolicited messages on CAN bus, resuming polling");
 
-#ifdef USE_TEXT_SENSOR
-void HuaweiR4850Component::publish_sensor_state_(text_sensor::TextSensor *sensor, const char *state) {
-  if (sensor) {
-    sensor->publish_state(state);
+#ifdef USE_BINARY_SENSOR
+      this->publish_sensor_state_(canbus_connectivity_binary_sensor_, true);
+#endif // USE_BINARY_SENSOR
+    }
   }
 }
-#endif // USE_TEXT_SENSOR
 
 uint32_t HuaweiR4850Component::canid_pack_(uint8_t addr, uint8_t command, bool src_controller, bool incomplete) {
   uint32_t id = 0x1080007E; // proto ID, group mask, HW/SW id flag already set

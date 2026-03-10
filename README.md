@@ -60,7 +60,7 @@ sensor:
     # [...]
 ```
 
-- **huawei_r4850_id**: ID of the main component (required if there are multiple) 
+- **huawei_r4850_id**: ID of the main component (required if there are multiple)
 - **input_voltage**: AC input voltage
 - **input_frequency**: AC input frequency
 - **input_current**: AC input current
@@ -98,7 +98,7 @@ number:
 
 If setting one of these values causes the number input to reset, the value was out of range for the PSU. In that case it makes sense to limit the value range using `min_value` and `max_value` on the number.
 
-- **huawei_r4850_id**: ID of the main component (required if there are multiple) 
+- **huawei_r4850_id**: ID of the main component (required if there are multiple)
 - **output_voltage**: Output voltage
 - **max_output_current**: Output current limit
 - **output_voltage_default**: Default output voltage
@@ -130,10 +130,45 @@ switch:
       name: Fan speed max
 ```
 
-- **huawei_r4850_id**: ID of the main component (required if there are multiple) 
+- **huawei_r4850_id**: ID of the main component (required if there are multiple)
 - **standby**: PSU standby (disables the DC output)
 - **fan_speed_max**: If enabled, forces the fan to full speed (even when the PSU would turn the fan off, which it does when AC input current limit is hit (and set to a low value like 5A) and temperature is <65°C)
 
+### Text sensors
+
+```yaml
+text_sensor:
+  - platform: huawei_r4850
+    huawei_r4850_id: huawei_r4850_1
+    board_type:
+      name: "Board type"
+    serial_number:
+      name: "Serial number"
+    item:
+      name: "Item"
+    # Not all models expose this information
+    #model:
+    #  name: "Model"
+```
+
+- **huawei_r4850_id**: ID of the main component (required if there are multiple)
+- **board_type**: Board-specific information, e.g. "EN1MRF7G1A5"
+- **serial_number**: The device serial number (seen on the sticker, e.g. BT2440636718)
+- **item**: The "item", basically an internal model name (e.g. 02312NFE-002)
+- **model**: The model, e.g. R4875G5 (not always available)
+
+### Binary sensors
+
+```yaml
+binary_sensor:
+  - platform: huawei_r4850
+    huawei_r4850_id: huawei_r4850_1
+    canbus_connectivity:
+      name: "CAN bus connectivity"
+```
+
+- **huawei_r4850_id**: ID of the main component (required if there are multiple)
+- **canbus_connectivity**: Indicates whether the CAN bus communication with the PSU is working.
 
 ### Example config
 
