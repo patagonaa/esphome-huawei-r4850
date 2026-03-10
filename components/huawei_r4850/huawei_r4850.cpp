@@ -89,7 +89,7 @@ void HuaweiR4850Component::resend_inputs() {
 
 void HuaweiR4850Component::update() {
   // Don't bother polling until the bus is determined to be active
-  if (canbus_connectivity) {
+  if (canbus_connectivity_) {
     ESP_LOGD(TAG, "Sending data request message");
     {
       uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_DATA, true, false);
@@ -140,8 +140,8 @@ void HuaweiR4850Component::update() {
   }
 
   // no new unsolicited messages during the last update interval, mark as bad
-  if (canbus_connectivity && last_unsolicited_message_ != 0 && (millis() - last_unsolicited_message_ > update_interval_)) {
-    canbus_connectivity = false;
+  if (canbus_connectivity_ && last_unsolicited_message_ != 0 && (millis() - last_unsolicited_message_ > update_interval_)) {
+    canbus_connectivity_ = false;
     ESP_LOGW(TAG, "No unsolicited messages received lately, stopping polling");
 
 #ifdef USE_BINARY_SENSOR
@@ -308,12 +308,12 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
   } else if (cmd == R48xx_CMD_ELABEL) {
     // Compose the full response string until complete
     std::vector<uint8_t> data(message.begin() + 2, message.end());
-    raw_elabel_response += std::string(data.cbegin(), data.cend());
+    raw_elabel_response_ += std::string(data.cbegin(), data.cend());
 
     if (!incomplete) {
       ESP_LOGI(TAG, "E-Label response received, populating sensors");
-      ELabelResponse elabel_response = parse_elabel_response(raw_elabel_response);
-      raw_elabel_response.clear();
+      ELabelResponse elabel_response = parse_elabel_response(raw_elabel_response_);
+      raw_elabel_response_.clear();
 
 #ifdef USE_TEXT_SENSOR
       std::map<std::string, text_sensor::TextSensor*> sensor_mappings = {
@@ -336,8 +336,8 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
   } else if (cmd == R48xx_CMD_UNSOLICITED) {
     last_unsolicited_message_ = millis();
 
-    if (!canbus_connectivity) {
-      canbus_connectivity = true;
+    if (!canbus_connectivity_) {
+      canbus_connectivity_ = true;
       ESP_LOGI(TAG, "Got unsolicited messages on CAN bus, resuming polling");
 
 #ifdef USE_BINARY_SENSOR
