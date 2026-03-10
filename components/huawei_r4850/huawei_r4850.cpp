@@ -80,7 +80,7 @@ void HuaweiR4850Component::set_resend_interval(uint32_t interval) {
 }
 
 void HuaweiR4850Component::resend_inputs() {
-  if (this->lastUpdate_ != 0) {
+  if (canbus_connectivity_) {
     for (auto &input : this->registered_inputs_) {
       input->resend_state();
     }
@@ -116,8 +116,16 @@ void HuaweiR4850Component::update() {
   #endif
   }
 
-  // no new value for 5* intervall -> set sensors to NAN)
-  if (this->lastUpdate_ != 0 && (millis() - this->lastUpdate_ > this->update_interval_ * 5)) {
+  // no new unsolicited messages during the last update interval, mark as bad
+  if (canbus_connectivity_ && last_unsolicited_message_ != 0 && (millis() - last_unsolicited_message_ > update_interval_)) {
+    canbus_connectivity_ = false;
+    ESP_LOGW(TAG, "No unsolicited messages received lately, stopping polling");
+
+#ifdef USE_BINARY_SENSOR
+    this->publish_sensor_state_(canbus_connectivity_binary_sensor_, false);
+#endif // USE_BINARY_SENSOR
+
+    // canbus disconnected -> set sensors to NAN
 #ifdef USE_SENSOR
     this->publish_sensor_state_(this->input_power_sensor_, NAN);
     this->publish_sensor_state_(this->input_voltage_sensor_, NAN);
@@ -135,18 +143,6 @@ void HuaweiR4850Component::update() {
     for (auto &input : this->registered_inputs_) {
       input->handle_timeout();
     }
-
-    this->lastUpdate_ = 0; // reset lastUpdate so we don't publish NaN every interval
-  }
-
-  // no new unsolicited messages during the last update interval, mark as bad
-  if (canbus_connectivity_ && last_unsolicited_message_ != 0 && (millis() - last_unsolicited_message_ > update_interval_)) {
-    canbus_connectivity_ = false;
-    ESP_LOGW(TAG, "No unsolicited messages received lately, stopping polling");
-
-#ifdef USE_BINARY_SENSOR
-    this->publish_sensor_state_(canbus_connectivity_binary_sensor_, false);
-#endif // USE_BINARY_SENSOR
   }
 }
 
@@ -266,9 +262,6 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
         break;
     }
 #endif // USE_SENSOR
-    if (!incomplete) {
-      this->lastUpdate_ = millis();
-    }
   } else if (cmd == R48xx_CMD_REGISTER_GET) {
 #ifdef USE_SENSOR
     if (error_type == 0) {
