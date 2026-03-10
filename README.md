@@ -168,7 +168,7 @@ binary_sensor:
 ```
 
 - **huawei_r4850_id**: ID of the main component (required if there are multiple)
-- **canbus_connectivity**: Indicates whether the communication on the CAN bus is working. If you have multiple units connected it makes sense to enable this sensor only for one of them.
+- **canbus_connectivity**: Indicates whether the CAN bus communication with the PSU is working.
 
 ### Example config
 
