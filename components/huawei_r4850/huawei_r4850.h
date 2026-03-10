@@ -122,6 +122,12 @@ class HuaweiR4850Component : public PollingComponent {
   bool canbus_connectivity_ = false;
 
 #ifdef USE_SENSOR
+  void publish_sensor_state_(sensor::Sensor *sensor, float state) {
+    if (sensor) {
+      sensor->publish_state(state);
+    }
+  }
+
   sensor::Sensor *input_voltage_sensor_{nullptr};
   sensor::Sensor *input_frequency_sensor_{nullptr};
   sensor::Sensor *input_current_sensor_{nullptr};
@@ -137,11 +143,6 @@ class HuaweiR4850Component : public PollingComponent {
   sensor::Sensor *fan_duty_cycle_target_sensor_{nullptr};
   sensor::Sensor *fan_rpm_sensor_{nullptr};
   bool needs_fan_status_{0};
-  void publish_sensor_state_(sensor::Sensor *sensor, float state) {
-    if (sensor) {
-      sensor->publish_state(state);
-    }
-  }
 #endif // USE_SENSOR
 
 #ifdef USE_TEXT_SENSOR
