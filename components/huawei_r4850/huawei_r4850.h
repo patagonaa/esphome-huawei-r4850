@@ -25,6 +25,32 @@ class HuaweiR4850Input {
 };
 
 class HuaweiR4850Component : public PollingComponent {
+#ifdef USE_SENSOR
+  SUB_SENSOR(operating_hours)
+  SUB_SENSOR(input_voltage)
+  SUB_SENSOR(input_frequency)
+  SUB_SENSOR(input_current)
+  SUB_SENSOR(input_power)
+  SUB_SENSOR(input_temp)
+  SUB_SENSOR(efficiency)
+  SUB_SENSOR(output_voltage)
+  SUB_SENSOR(output_current)
+  SUB_SENSOR(output_current_setpoint)
+  SUB_SENSOR(output_power)
+  SUB_SENSOR(output_temp)
+#endif // USE_SENSOR
+
+#ifdef USE_TEXT_SENSOR
+  SUB_TEXT_SENSOR(board_type)
+  SUB_TEXT_SENSOR(serial_number)
+  SUB_TEXT_SENSOR(item)
+  SUB_TEXT_SENSOR(model)
+#endif // USE_TEXT_SENSOR
+
+#ifdef USE_BINARY_SENSOR
+  SUB_BINARY_SENSOR(canbus_connectivity)
+#endif // USE_BINARY_SENSOR
+
  public:
   HuaweiR4850Component(canbus::Canbus *canbus);
   void setup() override;
@@ -33,27 +59,6 @@ class HuaweiR4850Component : public PollingComponent {
   void set_value(uint16_t register_id, std::vector<uint8_t> &data);
 
 #ifdef USE_SENSOR
-  void set_operating_hours_sensor(sensor::Sensor *operating_hours_sensor) { operating_hours_sensor_ = operating_hours_sensor; }
-  void set_input_voltage_sensor(sensor::Sensor *input_voltage_sensor) { input_voltage_sensor_ = input_voltage_sensor; }
-  void set_input_frequency_sensor(sensor::Sensor *input_frequency_sensor) {
-    input_frequency_sensor_ = input_frequency_sensor;
-  }
-  void set_input_current_sensor(sensor::Sensor *input_current_sensor) { input_current_sensor_ = input_current_sensor; }
-  void set_input_power_sensor(sensor::Sensor *input_power_sensor) { input_power_sensor_ = input_power_sensor; }
-  void set_input_temp_sensor(sensor::Sensor *input_temp_sensor) { input_temp_sensor_ = input_temp_sensor; }
-  void set_efficiency_sensor(sensor::Sensor *efficiency_sensor) { efficiency_sensor_ = efficiency_sensor; }
-  void set_output_voltage_sensor(sensor::Sensor *output_voltage_sensor) {
-    output_voltage_sensor_ = output_voltage_sensor;
-  }
-  void set_output_current_sensor(sensor::Sensor *output_current_sensor) {
-    output_current_sensor_ = output_current_sensor;
-  }
-  void set_output_current_setpoint_sensor(sensor::Sensor *output_current_setpoint_sensor) {
-    output_current_setpoint_sensor_ = output_current_setpoint_sensor;
-  }
-  void set_output_power_sensor(sensor::Sensor *output_power_sensor) { output_power_sensor_ = output_power_sensor; }
-  void set_output_temp_sensor(sensor::Sensor *output_temp_sensor) { output_temp_sensor_ = output_temp_sensor; }
-
   void set_fan_duty_cycle_min_sensor(sensor::Sensor *fan_duty_cycle_min_sensor) {
     fan_duty_cycle_min_sensor_ = fan_duty_cycle_min_sensor;
     needs_fan_status_ = true;
@@ -67,30 +72,6 @@ class HuaweiR4850Component : public PollingComponent {
     needs_fan_status_ = true;
   }
 #endif // USE_SENSOR
-
-#ifdef USE_TEXT_SENSOR
-  void set_board_type_text_sensor(text_sensor::TextSensor *board_type_text_sensor) {
-    board_type_text_sensor_ = board_type_text_sensor;
-  }
-
-  void set_serial_number_text_sensor(text_sensor::TextSensor *serial_number_text_sensor) {
-    serial_number_text_sensor_ = serial_number_text_sensor;
-  }
-
-  void set_item_text_sensor(text_sensor::TextSensor *info_text_sensor) {
-    item_text_sensor_ = info_text_sensor;
-  }
-
-  void set_model_text_sensor(text_sensor::TextSensor *model_text_sensor) {
-    model_text_sensor_ = model_text_sensor;
-  }
-#endif // USE_TEXT_SENSOR
-
-#ifdef USE_BINARY_SENSOR
-  void set_canbus_connectivity_binary_sensor(binary_sensor::BinarySensor *sensor) {
-    canbus_connectivity_binary_sensor_ = sensor;
-  }
-#endif // USE_BINARY_SENSOR
 
   void register_input(HuaweiR4850Input *number) {
     this->registered_inputs_.push_back(number);
@@ -125,18 +106,6 @@ class HuaweiR4850Component : public PollingComponent {
     }
   }
 
-  sensor::Sensor *operating_hours_sensor_{nullptr};
-  sensor::Sensor *input_voltage_sensor_{nullptr};
-  sensor::Sensor *input_frequency_sensor_{nullptr};
-  sensor::Sensor *input_current_sensor_{nullptr};
-  sensor::Sensor *input_power_sensor_{nullptr};
-  sensor::Sensor *input_temp_sensor_{nullptr};
-  sensor::Sensor *efficiency_sensor_{nullptr};
-  sensor::Sensor *output_voltage_sensor_{nullptr};
-  sensor::Sensor *output_current_sensor_{nullptr};
-  sensor::Sensor *output_current_setpoint_sensor_{nullptr};
-  sensor::Sensor *output_power_sensor_{nullptr};
-  sensor::Sensor *output_temp_sensor_{nullptr};
   sensor::Sensor *fan_duty_cycle_min_sensor_{nullptr};
   sensor::Sensor *fan_duty_cycle_target_sensor_{nullptr};
   sensor::Sensor *fan_rpm_sensor_{nullptr};
@@ -149,11 +118,6 @@ class HuaweiR4850Component : public PollingComponent {
       sensor->publish_state(state);
     }
   }
-
-  text_sensor::TextSensor *board_type_text_sensor_{nullptr};
-  text_sensor::TextSensor *serial_number_text_sensor_{nullptr};
-  text_sensor::TextSensor *item_text_sensor_{nullptr};
-  text_sensor::TextSensor *model_text_sensor_{nullptr};
 #endif // USE_TEXT_SENSOR
 
 #ifdef USE_BINARY_SENSOR
@@ -162,8 +126,6 @@ class HuaweiR4850Component : public PollingComponent {
       sensor->publish_state(state);
     }
   }
-
-  binary_sensor::BinarySensor *canbus_connectivity_binary_sensor_{nullptr};
 #endif // USE_BINARY_SENSOR
 
   std::vector<HuaweiR4850Input *> registered_inputs_{};
