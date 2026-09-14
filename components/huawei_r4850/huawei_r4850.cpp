@@ -75,18 +75,6 @@ void HuaweiR4850Component::setup() {
   this->canbus->add_callback(cb);
 }
 
-void HuaweiR4850Component::set_resend_interval(uint32_t interval) {
-  this->set_interval("resend", interval, [this]() { this->resend_inputs(); });
-}
-
-void HuaweiR4850Component::resend_inputs() {
-  if (canbus_connectivity_) {
-    for (auto &input : this->registered_inputs_) {
-      input->resend_state();
-    }
-  }
-}
-
 void HuaweiR4850Component::update() {
   // Don't bother polling until the bus is determined to be active
   if (canbus_connectivity_) {

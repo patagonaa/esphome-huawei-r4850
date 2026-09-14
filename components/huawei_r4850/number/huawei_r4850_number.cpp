@@ -35,12 +35,6 @@ void HuaweiR4850Number::control(float value) {
     this->pref_.save(&value);
 }
 
-void HuaweiR4850Number::resend_state() {
-  if (this->last_state_.has_value()) {
-    this->send_state_(this->last_state_.value());
-  }
-}
-
 void HuaweiR4850Number::send_state_(float value) {
   switch (this->registerId_)
   {
@@ -52,7 +46,7 @@ void HuaweiR4850Number::send_state_(float value) {
       this->parent_->set_value(this->registerId_, data);
       break;
     }
-    
+
     case SET_CURRENT_FUNCTION:
     case SET_DEFAULT_CURRENT_FUNCTION:
     {
@@ -82,7 +76,7 @@ void HuaweiR4850Number::send_state_(float value) {
       this->parent_->set_value(this->registerId_, data);
       break;
     }
-  
+
   default:
     break;
   }
@@ -102,7 +96,7 @@ void HuaweiR4850Number::handle_update(uint16_t register_id, std::vector<uint8_t>
       value = raw / 1024.0f;
       break;
     }
-    
+
     case SET_CURRENT_FUNCTION:
     case SET_DEFAULT_CURRENT_FUNCTION:
     {
@@ -129,7 +123,7 @@ void HuaweiR4850Number::handle_update(uint16_t register_id, std::vector<uint8_t>
       value = raw / 25600.0f * 100.0f;
       break;
     }
-  
+
   default:
     break;
   }
@@ -150,7 +144,7 @@ void HuaweiR4850Number::handle_error(uint16_t register_id, std::vector<uint8_t> 
       }
       this->publish_state(0.0f); // when the duty cycle is out of range, the PSU sets it back to auto.
       break;
-    
+
     default:
       this->publish_state(NAN); // set state to "unknown"
       break;

@@ -1,6 +1,6 @@
 import esphome.codegen as cg
-import esphome.config_validation as cv
 from esphome.components.canbus import CanbusComponent
+import esphome.config_validation as cv
 from esphome.const import CONF_ID
 
 MULTI_CONF = True
@@ -9,7 +9,6 @@ CONF_CANBUS_ID = "canbus_id"
 CONF_HUAWEI_R4850_ID = "huawei_r4850_id"
 CONF_PSU_ADDRESS = "psu_address"
 CONF_PSU_MAX_CURRENT = "psu_max_current"
-CONF_RESEND_INTERVAL = "resend_interval"
 
 huawei_r4850_ns = cg.esphome_ns.namespace("huawei_r4850")
 HuaweiR4850Component = huawei_r4850_ns.class_(
@@ -30,7 +29,6 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(CONF_PSU_MAX_CURRENT, default=63.3): cv.float_range(
             min=0, min_included=False
         ),
-        cv.Optional(CONF_RESEND_INTERVAL): cv.update_interval,
     }
 ).extend(cv.polling_component_schema("5s"))
 
@@ -47,6 +45,3 @@ async def to_code(config):
 
     max_current = config[CONF_PSU_MAX_CURRENT]
     cg.add(hub.set_psu_max_current(max_current))
-
-    if resend_interval := config.get(CONF_RESEND_INTERVAL):
-        cg.add(hub.set_resend_interval(resend_interval))

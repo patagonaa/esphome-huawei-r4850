@@ -32,12 +32,6 @@ void HuaweiR4850Switch::send_state_(bool state) {
   this->parent_->set_value(this->registerId_, data);
 }
 
-void HuaweiR4850Switch::resend_state() {
-  if (this->last_state_.has_value()) {
-    this->send_state_(this->last_state_.value());
-  }
-}
-
 bool HuaweiR4850Switch::assumed_state() {
   // if we could set the value to "unknown" we wouldn't need this, but we can't
   // so we just tell HA we don't know the state.

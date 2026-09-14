@@ -19,7 +19,6 @@ class HuaweiR4850Number : public number::Number, public Component, public Huawei
   void handle_update(uint16_t register_id, std::vector<uint8_t> &data) override;
   void handle_error(uint16_t register_id, std::vector<uint8_t> &data) override;
   void handle_timeout() override;
-  void resend_state() override;
 
  protected:
   HuaweiR4850Component *parent_;
