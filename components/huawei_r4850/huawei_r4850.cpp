@@ -266,7 +266,7 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
         {
           uint16_t duty_min = ((message[2] << 8) | message[3]) / 256;
           uint16_t duty_target = ((message[4] << 8) | message[5]) / 256;
-          uint16_t rpm = (message[6] << 8) | message[7];
+          uint16_t rpm = duty_target > 0 ? (message[6] << 8) | message[7] : 0; // rpm contains the last value even when fan is off due to no AC
           this->publish_sensor_state_(this->fan_duty_cycle_min_sensor_, duty_min);
           this->publish_sensor_state_(this->fan_duty_cycle_target_sensor_, duty_target);
           this->publish_sensor_state_(this->fan_rpm_sensor_, rpm);
