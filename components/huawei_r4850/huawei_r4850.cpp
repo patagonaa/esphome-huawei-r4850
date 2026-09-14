@@ -35,6 +35,7 @@ static const uint16_t R48xx_DATA_OUTPUT_TEMPERATURE = 0x17F;
 static const uint16_t R48xx_DATA_INPUT_TEMPERATURE = 0x180;
 static const uint16_t R48xx_DATA_OUTPUT_CURRENT_FAST = 0x181;
 static const uint16_t R48xx_DATA_OUTPUT_CURRENT_SLOW = 0x182;
+static const uint16_t R48xx_DATA_STATUS_FLAGS = 0x183;
 static const uint16_t R48xx_DATA_FAN_STATUS = 0x187;
 
 typedef std::map<std::string, std::string> ELabelResponse;
@@ -171,10 +172,10 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
   uint16_t register_id = ((message[0] & 0x0F) << 8) | message[1];
 
   if (cmd == R48xx_CMD_DATA) {
-#ifdef USE_SENSOR
     int32_t value = (message[4] << 24) | (message[5] << 16) | (message[6] << 8) | message[7];
     float conv_value = 0;
     switch (register_id) {
+#ifdef USE_SENSOR
       case R48xx_DATA_OPERATING_HOURS:
         this->publish_sensor_state_(this->operating_hours_sensor_, value);
         ESP_LOGV(TAG, "Operating Hours: %" PRIi32, value);
@@ -252,12 +253,26 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
         conv_value = value / 1024.0f;
         ESP_LOGV(TAG, "Output current: %f", conv_value);
         break;
+#endif // USE_SENSOR
+
+      case R48xx_DATA_STATUS_FLAGS:
+      {
+        uint16_t status_flags_ext = (message[2] << 8) | message[3];
+        uint32_t status_flags = (message[4] << 24) | (message[5] << 16) | (message[6] << 8) | message[7];
+
+#ifdef USE_BINARY_SENSOR
+        bool current_limiting = status_flags & (1 << 28);
+        this->publish_sensor_state_(this->current_limiting_binary_sensor_, current_limiting);
+        bool input_power_failure = status_flags & (1 << 29);
+        this->publish_sensor_state_(this->ac_present_binary_sensor_, !input_power_failure);
+#endif // USE_BINARY_SENSOR
+        break;
+      }
 
       default:
         // printf("Unknown parameter 0x%02X, 0x%04X\r\n",frame[1], value);
         break;
     }
-#endif // USE_SENSOR
   } else if (cmd == R48xx_CMD_REGISTER_GET) {
 #ifdef USE_SENSOR
     if (error_type == 0) {

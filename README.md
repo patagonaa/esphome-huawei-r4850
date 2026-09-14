@@ -162,10 +162,16 @@ binary_sensor:
     huawei_r4850_id: huawei_r4850_1
     canbus_connectivity:
       name: "CAN bus connectivity"
+    ac_present:
+      name: "AC present"
+    current_limiting:
+      name: "Current limiting"
 ```
 
 - **huawei_r4850_id**: ID of the main component (required if there are multiple)
-- **canbus_connectivity**: Indicates whether the CAN bus communication with the PSU is working.
+- **canbus_connectivity**: Indicates whether the CAN bus communication with the PSU is working
+- **ac_present**: Indicates whether the power is applied to the PSU
+- **current_limiting**: Indicates whether the PSU is in constant current mode (ON) or constant voltage mode (OFF)
 
 ### Example config
 
