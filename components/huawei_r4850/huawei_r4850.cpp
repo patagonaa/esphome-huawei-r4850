@@ -22,6 +22,7 @@ static const uint8_t R48xx_CMD_CONTROL = 0x80;
 static const uint8_t R48xx_CMD_REGISTER_GET = 0x82;
 static const uint8_t R48xx_CMD_UNSOLICITED = 0x11;
 
+static const uint16_t R48xx_DATA_OPERATING_HOURS = 0x10E;
 static const uint16_t R48xx_DATA_INPUT_POWER = 0x170;
 static const uint16_t R48xx_DATA_INPUT_FREQ = 0x171;
 static const uint16_t R48xx_DATA_INPUT_CURRENT = 0x172;
@@ -174,6 +175,11 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
     int32_t value = (message[4] << 24) | (message[5] << 16) | (message[6] << 8) | message[7];
     float conv_value = 0;
     switch (register_id) {
+      case R48xx_DATA_OPERATING_HOURS:
+        this->publish_sensor_state_(this->operating_hours_sensor_, value);
+        ESP_LOGV(TAG, "Operating Hours: %" PRIi32, value);
+        break;
+
       case R48xx_DATA_INPUT_POWER:
         conv_value = value / 1024.0f;
         this->publish_sensor_state_(this->input_power_sensor_, conv_value);

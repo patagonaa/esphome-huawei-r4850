@@ -3,10 +3,12 @@ from esphome.components import sensor
 import esphome.config_validation as cv
 from esphome.const import (
     DEVICE_CLASS_CURRENT,
+    DEVICE_CLASS_DURATION,
     DEVICE_CLASS_FREQUENCY,
     DEVICE_CLASS_POWER,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
+    ENTITY_CATEGORY_DIAGNOSTIC,
     ICON_CURRENT_AC,
     ICON_FAN,
     ICON_PERCENT,
@@ -14,6 +16,7 @@ from esphome.const import (
     UNIT_AMPERE,
     UNIT_CELSIUS,
     UNIT_HERTZ,
+    UNIT_HOUR,
     UNIT_PERCENT,
     UNIT_REVOLUTIONS_PER_MINUTE,
     UNIT_VOLT,
@@ -24,6 +27,7 @@ from . import CONF_HUAWEI_R4850_ID, HUAWEI_R4850_COMPONENT_SCHEMA
 
 ICON_CURRENT_DC = "mdi:current-dc"
 
+CONF_OPERATING_HOURS = "operating_hours"
 CONF_INPUT_VOLTAGE = "input_voltage"
 CONF_INPUT_FREQUENCY = "input_frequency"
 CONF_INPUT_CURRENT = "input_current"
@@ -40,6 +44,7 @@ CONF_FAN_DUTY_CYCLE_TARGET = "fan_duty_cycle_target"
 CONF_FAN_RPM = "fan_rpm"
 
 TYPES = [
+    CONF_OPERATING_HOURS,
     CONF_INPUT_VOLTAGE,
     CONF_INPUT_FREQUENCY,
     CONF_INPUT_CURRENT,
@@ -58,6 +63,13 @@ TYPES = [
 
 CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
     {
+        cv.Optional(CONF_OPERATING_HOURS): sensor.sensor_schema(
+            unit_of_measurement=UNIT_HOUR,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_DURATION,
+            state_class=STATE_CLASS_MEASUREMENT,
+            entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+        ),
         cv.Optional(CONF_INPUT_VOLTAGE): sensor.sensor_schema(
             unit_of_measurement=UNIT_VOLT,
             accuracy_decimals=1,

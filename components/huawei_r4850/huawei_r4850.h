@@ -33,6 +33,7 @@ class HuaweiR4850Component : public PollingComponent {
   void set_value(uint16_t register_id, std::vector<uint8_t> &data);
 
 #ifdef USE_SENSOR
+  void set_operating_hours_sensor(sensor::Sensor *operating_hours_sensor) { operating_hours_sensor_ = operating_hours_sensor; }
   void set_input_voltage_sensor(sensor::Sensor *input_voltage_sensor) { input_voltage_sensor_ = input_voltage_sensor; }
   void set_input_frequency_sensor(sensor::Sensor *input_frequency_sensor) {
     input_frequency_sensor_ = input_frequency_sensor;
@@ -124,6 +125,7 @@ class HuaweiR4850Component : public PollingComponent {
     }
   }
 
+  sensor::Sensor *operating_hours_sensor_{nullptr};
   sensor::Sensor *input_voltage_sensor_{nullptr};
   sensor::Sensor *input_frequency_sensor_{nullptr};
   sensor::Sensor *input_current_sensor_{nullptr};

@@ -57,6 +57,7 @@ sensor:
 ```
 
 - **huawei_r4850_id**: ID of the main component (required if there are multiple)
+- **operating_hours**: Total PSU operating hours
 - **input_voltage**: AC input voltage
 - **input_frequency**: AC input frequency
 - **input_current**: AC input current
