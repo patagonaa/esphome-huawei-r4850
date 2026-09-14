@@ -33,8 +33,8 @@ static const uint16_t R48xx_DATA_OUTPUT_CURRENT_MAX = 0x176;
 static const uint16_t R48xx_DATA_INPUT_VOLTAGE = 0x178;
 static const uint16_t R48xx_DATA_OUTPUT_TEMPERATURE = 0x17F;
 static const uint16_t R48xx_DATA_INPUT_TEMPERATURE = 0x180;
-static const uint16_t R48xx_DATA_OUTPUT_CURRENT = 0x181;
-static const uint16_t R48xx_DATA_OUTPUT_CURRENT1 = 0x182;
+static const uint16_t R48xx_DATA_OUTPUT_CURRENT_FAST = 0x181;
+static const uint16_t R48xx_DATA_OUTPUT_CURRENT_SLOW = 0x182;
 static const uint16_t R48xx_DATA_FAN_STATUS = 0x187;
 
 typedef std::map<std::string, std::string> ELabelResponse;
@@ -242,14 +242,14 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
         ESP_LOGV(TAG, "Input temperature: %f", conv_value);
         break;
 
-      case R48xx_DATA_OUTPUT_CURRENT1:
-        // printf("Output Current(1) %.02fA\r\n", value / 1024.0f);
-        // output_current = value / 1024.0f;
-        break;
-
-      case R48xx_DATA_OUTPUT_CURRENT:
+      case R48xx_DATA_OUTPUT_CURRENT_FAST:
         conv_value = value / 1024.0f;
         this->publish_sensor_state_(this->output_current_sensor_, conv_value);
+        ESP_LOGV(TAG, "Output current: %f", conv_value);
+        break;
+
+      case R48xx_DATA_OUTPUT_CURRENT_SLOW:
+        conv_value = value / 1024.0f;
         ESP_LOGV(TAG, "Output current: %f", conv_value);
         break;
 
