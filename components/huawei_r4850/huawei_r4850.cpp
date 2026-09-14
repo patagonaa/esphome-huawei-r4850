@@ -270,7 +270,7 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
       }
 
       default:
-        // printf("Unknown parameter 0x%02X, 0x%04X\r\n",frame[1], value);
+        ESP_LOGV(TAG, "Unknown status value %03x: %02x %02x %02x %02x %02x %02x", register_id, message[2], message[3], message[4], message[5], message[6], message[7])
         break;
     }
   } else if (cmd == R48xx_CMD_REGISTER_GET) {
@@ -289,7 +289,6 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
           break;
         }
         default:
-          // printf("Unknown parameter 0x%02X, 0x%04X\r\n",frame[1], value);
           break;
       }
     } else {
