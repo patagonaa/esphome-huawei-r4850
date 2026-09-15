@@ -119,17 +119,21 @@ void HuaweiR4850Component::update() {
 
     // canbus disconnected -> set sensors to NAN
 #ifdef USE_SENSOR
-    this->publish_sensor_state_(this->input_power_sensor_, NAN);
+    this->publish_sensor_state_(this->operating_hours_sensor_, NAN);
     this->publish_sensor_state_(this->input_voltage_sensor_, NAN);
-    this->publish_sensor_state_(this->input_current_sensor_, NAN);
-    this->publish_sensor_state_(this->input_temp_sensor_, NAN);
     this->publish_sensor_state_(this->input_frequency_sensor_, NAN);
-    this->publish_sensor_state_(this->output_power_sensor_, NAN);
+    this->publish_sensor_state_(this->input_current_sensor_, NAN);
+    this->publish_sensor_state_(this->input_power_sensor_, NAN);
+    this->publish_sensor_state_(this->input_temp_sensor_, NAN);
+    this->publish_sensor_state_(this->efficiency_sensor_, NAN);
+    this->publish_sensor_state_(this->output_voltage_sensor_, NAN);
     this->publish_sensor_state_(this->output_current_sensor_, NAN);
     this->publish_sensor_state_(this->output_current_setpoint_sensor_, NAN);
-    this->publish_sensor_state_(this->output_voltage_sensor_, NAN);
+    this->publish_sensor_state_(this->output_power_sensor_, NAN);
     this->publish_sensor_state_(this->output_temp_sensor_, NAN);
-    this->publish_sensor_state_(this->efficiency_sensor_, NAN);
+    this->publish_sensor_state_(this->fan_duty_cycle_min_sensor_, NAN);
+    this->publish_sensor_state_(this->fan_duty_cycle_target_sensor_, NAN);
+    this->publish_sensor_state_(this->fan_rpm_sensor_, NAN);
 #endif // USE_SENSOR
 
     for (auto &input : this->registered_inputs_) {
