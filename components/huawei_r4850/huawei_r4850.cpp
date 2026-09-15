@@ -336,8 +336,6 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
         }
       }
 #endif // USE_TEXT_SENSOR
-
-      ESP_LOGI(TAG, "Will no longer poll for E-label response");
       has_received_elabel_response_ = true;
     }
   } else if (cmd == R48xx_CMD_UNSOLICITED) {
