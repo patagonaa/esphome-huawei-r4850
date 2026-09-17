@@ -134,9 +134,8 @@ switch:
 - **standby**: PSU standby (disables the DC output)
 - **fan_speed_max**: If enabled, forces the fan to full speed (even when the PSU would turn the fan off, which it does when AC input current limit is hit (and set to a low value like 5A) and temperature is <65°C)
 
-Note that the values stored in the PSU itself cannot be read back from it, so
-the controller keeps track of the values it has set and restores those on boot.
-If you don't want this behavior, set `restore_value: false` on the entity.
+The controller restores the state of the switches to the previous value on
+boot. To disable this behavior, add `restore_mode: ALWAYS_OFF` to the entity.
 
 ### Text sensors
 

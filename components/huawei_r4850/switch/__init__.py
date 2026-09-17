@@ -3,7 +3,7 @@ from esphome.components import switch
 import esphome.config_validation as cv
 from esphome.const import (
     CONF_ID,
-    CONF_RESTORE_VALUE,
+    CONF_RESTORE_MODE,
     ENTITY_CATEGORY_CONFIG,
     ICON_FAN,
     ICON_POWER,
@@ -24,14 +24,18 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
             HuaweiR4850Switch, icon=ICON_FAN, entity_category=ENTITY_CATEGORY_CONFIG
         ).extend(
             {
-                cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
+                cv.Optional(CONF_RESTORE_MODE, default="RESTORE_DEFAULT_OFF"): cv.enum(
+                    switch.RESTORE_MODES, upper=True, space="_"
+                ),
             }
         ),
         cv.Optional(CONF_STANDBY): switch.switch_schema(
             HuaweiR4850Switch, icon=ICON_POWER, entity_category=ENTITY_CATEGORY_CONFIG
         ).extend(
             {
-                cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
+                cv.Optional(CONF_RESTORE_MODE, default="RESTORE_DEFAULT_OFF"): cv.enum(
+                    switch.RESTORE_MODES, upper=True, space="_"
+                ),
             }
         ),
     }
@@ -47,7 +51,7 @@ async def to_code(config):
         await switch.register_switch(var, conf)
         cg.add(getattr(hub, "register_input")(var))
         cg.add(var.set_parent(hub, 0x134))
-        cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
+        cg.add(var.set_restore_mode(conf[CONF_RESTORE_MODE]))
 
     if CONF_STANDBY in config:
         conf = config[CONF_STANDBY]
@@ -56,4 +60,4 @@ async def to_code(config):
         await switch.register_switch(var, conf)
         cg.add(getattr(hub, "register_input")(var))
         cg.add(var.set_parent(hub, 0x132))
-        cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
+        cg.add(var.set_restore_mode(conf[CONF_RESTORE_MODE]))
