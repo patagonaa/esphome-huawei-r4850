@@ -24,7 +24,7 @@ class HuaweiR4850Number : public number::Number, public Component, public Huawei
   HuaweiR4850Component *parent_;
   uint16_t registerId_;
   std::optional<float> last_state_;
-  bool restore_value_{false};
+  bool restore_value_{true};
 
   void send_state_(float value);
   void control(float value) override;

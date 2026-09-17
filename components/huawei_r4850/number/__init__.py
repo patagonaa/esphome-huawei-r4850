@@ -48,7 +48,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                 cv.Optional(CONF_MODE, default="BOX"): cv.enum(
                     number.NUMBER_MODES, upper=True
                 ),
-                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+                cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
             }
         ),
         cv.Optional(CONF_OUTPUT_VOLTAGE_DEFAULT): number.number_schema(
@@ -64,7 +64,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                 cv.Optional(CONF_MODE, default="BOX"): cv.enum(
                     number.NUMBER_MODES, upper=True
                 ),
-                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+                cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
             }
         ),
         cv.Optional(CONF_MAX_OUTPUT_CURRENT): number.number_schema(
@@ -81,7 +81,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                 cv.Optional(CONF_MODE, default="BOX"): cv.enum(
                     number.NUMBER_MODES, upper=True
                 ),
-                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+                cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
             }
         ),
         cv.Optional(CONF_MAX_OUTPUT_CURRENT_DEFAULT): number.number_schema(
@@ -98,7 +98,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                 cv.Optional(CONF_MODE, default="BOX"): cv.enum(
                     number.NUMBER_MODES, upper=True
                 ),
-                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+                cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
             }
         ),
         cv.Optional(CONF_MAX_AC_CURRENT): number.number_schema(
@@ -115,7 +115,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                 cv.Optional(CONF_MODE, default="BOX"): cv.enum(
                     number.NUMBER_MODES, upper=True
                 ),
-                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+                cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
             }
         ),
         cv.Optional(CONF_FAN_DUTY_CYCLE): number.number_schema(
@@ -133,7 +133,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                 cv.Optional(CONF_MODE, default="SLIDER"): cv.enum(
                     number.NUMBER_MODES, upper=True
                 ),
-                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+                cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
             }
         ),
     }

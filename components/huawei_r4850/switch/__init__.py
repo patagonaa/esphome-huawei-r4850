@@ -24,14 +24,14 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
             HuaweiR4850Switch, icon=ICON_FAN, entity_category=ENTITY_CATEGORY_CONFIG
         ).extend(
             {
-                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+                cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
             }
         ),
         cv.Optional(CONF_STANDBY): switch.switch_schema(
             HuaweiR4850Switch, icon=ICON_POWER, entity_category=ENTITY_CATEGORY_CONFIG
         ).extend(
             {
-                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
+                cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
             }
         ),
     }

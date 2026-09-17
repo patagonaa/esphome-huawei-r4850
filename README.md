@@ -5,8 +5,8 @@ ESPHome component to control and read values from Huawei R48xx power supplies vi
 Fork of [mb-software/esphome-huawei-r4850](https://github.com/mb-software/esphome-huawei-r4850).
 
 ## Requirements
-This component is tested and verified to work on ESP32 using the `esp32_can` platform.  
-In addition to the ESP32 board, a CAN transceiver like the SN65HVD230 is required. These can be wired directly to the 3.3V GPIO and supply pins of the ESP32 board.  
+This component is tested and verified to work on ESP32 using the `esp32_can` platform.
+In addition to the ESP32 board, a CAN transceiver like the SN65HVD230 is required. These can be wired directly to the 3.3V GPIO and supply pins of the ESP32 board.
 The component has also been tested with the `mcp2515` platform, but due to ESPHome limits (no interrupts, no TX queue, no RX filtering), it's almost guaranteed sensor updates and control messages will be lost, making it unreliable.
 
 ## Configuration
@@ -40,7 +40,7 @@ huawei_r4850:
 - **canbus_id**: ID of the [CAN Bus component](https://esphome.io/components/canbus/) the PSU is attached to
 - **update_interval** ([Time](https://esphome.io/guides/configuration-types#config-time), Default `5s`): Update interval for sensors
 - **psu_address** (int, Required): Address of the PSU (1 = first PSU, 2 = second, ...)
-- **psu_max_current** (float, Default `53.5`): Max current rating of the PSU (~53.5 for R4850G6, ~42.6 for R4830S1).  
+- **psu_max_current** (float, Default `53.5`): Max current rating of the PSU (~53.5 for R4850G6, ~42.6 for R4830S1).
   If `output_current_setpoint` != `max_output_current`, Max current vs. actual current has to be calculated / calibrated.
 
 ### Sensors
@@ -114,6 +114,9 @@ Some of these values are saved persistently to the PSU, some additionally only a
 | max_ac_current             |     X      |          X           |            X            |
 | fan_duty_cycle             |            |          X           |                         |
 
+Note that the values stored in the PSU itself cannot be read back from it, so
+the controller keeps track of the values it has set and restores those on boot.
+If you don't want this behavior, set `restore_value: false` on the entity.
 
 ### Switches
 
@@ -130,6 +133,10 @@ switch:
 - **huawei_r4850_id**: ID of the main component (required if there are multiple)
 - **standby**: PSU standby (disables the DC output)
 - **fan_speed_max**: If enabled, forces the fan to full speed (even when the PSU would turn the fan off, which it does when AC input current limit is hit (and set to a low value like 5A) and temperature is <65°C)
+
+Note that the values stored in the PSU itself cannot be read back from it, so
+the controller keeps track of the values it has set and restores those on boot.
+If you don't want this behavior, set `restore_value: false` on the entity.
 
 ### Text sensors
 
