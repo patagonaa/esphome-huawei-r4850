@@ -26,7 +26,7 @@ CONFIG_SCHEMA = cv.Schema(
         cv.GenerateID(): cv.declare_id(HuaweiR4850Component),
         cv.Required(CONF_CANBUS_ID): cv.use_id(CanbusComponent),
         cv.Required(CONF_PSU_ADDRESS): cv.int_range(min=1, max=127),
-        cv.Optional(CONF_PSU_MAX_CURRENT, default=63.3): cv.float_range(
+        cv.Required(CONF_PSU_MAX_CURRENT): cv.float_range(
             min=0, min_included=False
         ),
     }
