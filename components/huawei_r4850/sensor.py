@@ -104,7 +104,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
         cv.Optional(CONF_EFFICIENCY): sensor.sensor_schema(
             unit_of_measurement=UNIT_PERCENT,
             icon=ICON_PERCENT,
-            accuracy_decimals=0,
+            accuracy_decimals=1,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_OUTPUT_VOLTAGE): sensor.sensor_schema(
