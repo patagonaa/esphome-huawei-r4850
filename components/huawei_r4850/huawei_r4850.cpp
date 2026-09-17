@@ -322,6 +322,12 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
       ELabelResponse elabel_response = parse_elabel_response(raw_elabel_response_);
       raw_elabel_response_.clear();
 
+#ifdef ESPHOME_LOG_HAS_DEBUG
+      for (auto const &[key, value] : elabel_response) {
+        ESP_LOGD(TAG, "  %s: %s", key.c_str(), value.c_str());
+      }
+#endif // ESPHOME_LOG_HAS_DEBUG
+
 #ifdef USE_TEXT_SENSOR
       std::map<std::string, text_sensor::TextSensor*> sensor_mappings = {
         {"BoardType", board_type_text_sensor_},
