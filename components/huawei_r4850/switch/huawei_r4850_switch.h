@@ -29,8 +29,6 @@ class HuaweiR4850Switch : public switch_::Switch, public Component, public Huawe
   std::optional<bool> last_state_;
   bool restore_value_{true};
 
-  bool assumed_state_{true};
-
   void send_state_(bool value);
 
   void write_state(bool state) override;
