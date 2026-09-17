@@ -27,7 +27,7 @@ class HuaweiR4850Switch : public switch_::Switch, public Component, public Huawe
   HuaweiR4850Component *parent_;
   uint16_t registerId_;
   std::optional<bool> last_state_;
-  bool restore_value_{false};
+  bool restore_value_{true};
 
   bool assumed_state_{true};
 
