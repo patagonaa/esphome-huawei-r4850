@@ -32,6 +32,7 @@ huawei_r4850:
   - id: huawei_r4850_1
     canbus_id: can
     update_interval: 5s
+    resend_interval: 5s
     psu_address: 1 # 1 = first PSU, 2 = second, ...
     psu_max_current: 53.5 # ~53.5 for R4850G6, ~42.6 for R4830S1
 ```
@@ -39,6 +40,7 @@ huawei_r4850:
 - **id**: ID of this component
 - **canbus_id**: ID of the [CAN Bus component](https://esphome.io/components/canbus/) the PSU is attached to
 - **update_interval** ([Time](https://esphome.io/guides/configuration-types#config-time), Default `5s`): Update interval for sensors
+- **resend_interval** ([Time](https://esphome.io/guides/configuration-types#config-time), Default `5s`): Interval for numbers and switches with `resend: true` to resend their state (see [Resend](#resend))
 - **psu_address** (int, Required): Address of the PSU (1 = first PSU, 2 = second, ...)
 - **psu_max_current** (float, Required): Max current rating of the PSU (~87.0 for R4875G5, ~53.5 for R4850G6, ~42.6 for R4830S1).
 
@@ -180,6 +182,17 @@ binary_sensor:
 - **canbus_connectivity**: Indicates whether the CAN bus communication with the PSU is working
 - **ac_present**: Indicates whether the power is applied to the PSU
 - **current_limiting**: Indicates whether the PSU is in constant current mode (ON) or constant voltage mode (OFF)
+
+### Resend
+
+Some registers get reset if the PSU loses AC power (even if still powered from the DC side).
+To avoid ESPHome showing a different state from what is set in the PSU, there is the option to set registers periodically.
+
+There are two configuration settings to control this:
+- `resend` on each number/switch entity sets whether the register is resent or not
+- `resend_interval` on the main component sets the time interval in which to resend the register values
+
+For the registers where this matters because the PSU resets them on AC loss (`output_voltage`, `max_output_current`, `fan_duty_cycle`), this is enabled by default.
 
 ### Example config
 

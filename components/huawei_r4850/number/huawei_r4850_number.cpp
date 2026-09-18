@@ -35,6 +35,12 @@ void HuaweiR4850Number::control(float value) {
     this->pref_.save(&value);
 }
 
+void HuaweiR4850Number::handle_resend() {
+  if (this->resend_ && this->last_state_.has_value()) {
+    this->send_state_(this->last_state_.value());
+  }
+}
+
 void HuaweiR4850Number::send_state_(float value) {
   switch (this->registerId_)
   {

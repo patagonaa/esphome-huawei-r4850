@@ -15,12 +15,19 @@ void HuaweiR4850Switch::setup() {
 }
 
 void HuaweiR4850Switch::write_state(bool state) {
+  this->last_state_ = state;
   this->send_state_(state);
 }
 
 void HuaweiR4850Switch::send_state_(bool state) {
   std::vector<uint8_t> data = {0x00, (uint8_t)(state ? 0x01 : 0x00), 0x00, 0x00, 0x00, 0x00};
   this->parent_->set_value(this->registerId_, data);
+}
+
+void HuaweiR4850Switch::handle_resend() {
+  if (this->resend_ && this->last_state_.has_value()) {
+    this->send_state_(this->last_state_.value());
+  }
 }
 
 bool HuaweiR4850Switch::assumed_state() {

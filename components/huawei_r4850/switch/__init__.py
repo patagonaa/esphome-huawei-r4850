@@ -11,6 +11,8 @@ from esphome.const import (
 
 from .. import CONF_HUAWEI_R4850_ID, HUAWEI_R4850_COMPONENT_SCHEMA, huawei_r4850_ns
 
+CONF_RESEND = "resend"
+
 CONF_FAN_SPEED_MAX = "fan_speed_max"
 CONF_STANDBY = "standby"
 
@@ -27,6 +29,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                 cv.Optional(CONF_RESTORE_MODE, default="RESTORE_DEFAULT_OFF"): cv.enum(
                     switch.RESTORE_MODES, upper=True, space="_"
                 ),
+                cv.Optional(CONF_RESEND, default=False): cv.boolean,
             }
         ),
         cv.Optional(CONF_STANDBY): switch.switch_schema(
@@ -36,6 +39,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                 cv.Optional(CONF_RESTORE_MODE, default="RESTORE_DEFAULT_OFF"): cv.enum(
                     switch.RESTORE_MODES, upper=True, space="_"
                 ),
+                cv.Optional(CONF_RESEND, default=False): cv.boolean,
             }
         ),
     }
@@ -52,6 +56,7 @@ async def to_code(config):
         cg.add(getattr(hub, "register_input")(var))
         cg.add(var.set_parent(hub, 0x134))
         cg.add(var.set_restore_mode(conf[CONF_RESTORE_MODE]))
+        cg.add(var.set_resend(conf[CONF_RESEND]))
 
     if CONF_STANDBY in config:
         conf = config[CONF_STANDBY]
@@ -61,3 +66,4 @@ async def to_code(config):
         cg.add(getattr(hub, "register_input")(var))
         cg.add(var.set_parent(hub, 0x132))
         cg.add(var.set_restore_mode(conf[CONF_RESTORE_MODE]))
+        cg.add(var.set_resend(conf[CONF_RESEND]))

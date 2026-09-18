@@ -22,6 +22,8 @@ from .. import CONF_HUAWEI_R4850_ID, HUAWEI_R4850_COMPONENT_SCHEMA, huawei_r4850
 
 ICON_CURRENT_DC = "mdi:current-dc"
 
+CONF_RESEND = "resend"
+
 CONF_OUTPUT_VOLTAGE = "output_voltage"
 CONF_OUTPUT_VOLTAGE_DEFAULT = "output_voltage_default"
 CONF_MAX_OUTPUT_CURRENT = "max_output_current"
@@ -49,6 +51,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                     number.NUMBER_MODES, upper=True
                 ),
                 cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
+                cv.Optional(CONF_RESEND, default=True): cv.boolean,
             }
         ),
         cv.Optional(CONF_OUTPUT_VOLTAGE_DEFAULT): number.number_schema(
@@ -65,6 +68,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                     number.NUMBER_MODES, upper=True
                 ),
                 cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
+                cv.Optional(CONF_RESEND, default=False): cv.boolean,
             }
         ),
         cv.Optional(CONF_MAX_OUTPUT_CURRENT): number.number_schema(
@@ -82,6 +86,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                     number.NUMBER_MODES, upper=True
                 ),
                 cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
+                cv.Optional(CONF_RESEND, default=True): cv.boolean,
             }
         ),
         cv.Optional(CONF_MAX_OUTPUT_CURRENT_DEFAULT): number.number_schema(
@@ -99,6 +104,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                     number.NUMBER_MODES, upper=True
                 ),
                 cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
+                cv.Optional(CONF_RESEND, default=False): cv.boolean,
             }
         ),
         cv.Optional(CONF_MAX_AC_CURRENT): number.number_schema(
@@ -116,6 +122,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                     number.NUMBER_MODES, upper=True
                 ),
                 cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
+                cv.Optional(CONF_RESEND, default=False): cv.boolean,
             }
         ),
         cv.Optional(CONF_FAN_DUTY_CYCLE): number.number_schema(
@@ -134,6 +141,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                     number.NUMBER_MODES, upper=True
                 ),
                 cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
+                cv.Optional(CONF_RESEND, default=True): cv.boolean,
             }
         ),
     }
@@ -156,6 +164,7 @@ async def to_code(config):
         cg.add(getattr(hub, "register_input")(var))
         cg.add(var.set_parent(hub, 0x100))
         cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
+        cg.add(var.set_resend(conf[CONF_RESEND]))
 
     if CONF_OUTPUT_VOLTAGE_DEFAULT in config:
         conf = config[CONF_OUTPUT_VOLTAGE_DEFAULT]
@@ -171,6 +180,7 @@ async def to_code(config):
         cg.add(getattr(hub, "register_input")(var))
         cg.add(var.set_parent(hub, 0x101))
         cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
+        cg.add(var.set_resend(conf[CONF_RESEND]))
 
     if CONF_MAX_OUTPUT_CURRENT in config:
         conf = config[CONF_MAX_OUTPUT_CURRENT]
@@ -186,6 +196,7 @@ async def to_code(config):
         cg.add(getattr(hub, "register_input")(var))
         cg.add(var.set_parent(hub, 0x103))
         cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
+        cg.add(var.set_resend(conf[CONF_RESEND]))
 
     if CONF_MAX_OUTPUT_CURRENT_DEFAULT in config:
         conf = config[CONF_MAX_OUTPUT_CURRENT_DEFAULT]
@@ -201,6 +212,7 @@ async def to_code(config):
         cg.add(getattr(hub, "register_input")(var))
         cg.add(var.set_parent(hub, 0x104))
         cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
+        cg.add(var.set_resend(conf[CONF_RESEND]))
 
     if CONF_MAX_AC_CURRENT in config:
         conf = config[CONF_MAX_AC_CURRENT]
@@ -216,6 +228,7 @@ async def to_code(config):
         cg.add(getattr(hub, "register_input")(var))
         cg.add(var.set_parent(hub, 0x109))
         cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
+        cg.add(var.set_resend(conf[CONF_RESEND]))
 
     if CONF_FAN_DUTY_CYCLE in config:
         conf = config[CONF_FAN_DUTY_CYCLE]
@@ -231,3 +244,4 @@ async def to_code(config):
         cg.add(getattr(hub, "register_input")(var))
         cg.add(var.set_parent(hub, 0x114))
         cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
+        cg.add(var.set_resend(conf[CONF_RESEND]))
