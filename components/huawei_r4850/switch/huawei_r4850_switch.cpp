@@ -8,23 +8,14 @@ static const int16_t SET_FAN_SPEED_MAX_FUNCTION = 0x134;
 static const int16_t SET_STANDBY_FUNCTION = 0x132;
 
 void HuaweiR4850Switch::setup() {
-  if (this->last_state_.has_value()) // something has already set the values
-    return;
+  optional<bool> initial_state = this->get_initial_state_with_restore_mode();
 
-  bool value;
-  if (this->restore_value_) {
-    this->pref_ = global_preferences->make_preference<bool>(this->get_object_id_hash());
-    if (this->pref_.load(&value)) {
-      this->write_state(value);
-    }
-  }
+   if (initial_state.has_value())
+    this->write_state(initial_state.value());
 }
 
 void HuaweiR4850Switch::write_state(bool state) {
-  this->last_state_ = state;
   this->send_state_(state);
-  if (this->restore_value_)
-    this->pref_.save(&state);
 }
 
 void HuaweiR4850Switch::send_state_(bool state) {
@@ -33,28 +24,23 @@ void HuaweiR4850Switch::send_state_(bool state) {
 }
 
 bool HuaweiR4850Switch::assumed_state() {
-  // if we could set the value to "unknown" we wouldn't need this, but we can't
-  // so we just tell HA we don't know the state.
-  return this->assumed_state_;
+  // Since we cannot poll the device for the actual state of the switch we
+  // have to use assumed state
+  return true;
 }
 
 void HuaweiR4850Switch::handle_update(uint16_t register_id, std::vector<uint8_t> &data) {
   if (register_id != this->registerId_)
     return;
   this->publish_state(data[1]);
-  this->assumed_state_ = false;
 }
+
 void HuaweiR4850Switch::handle_error(uint16_t register_id, std::vector<uint8_t> &data) {
-  if (register_id != this->registerId_)
-    return;
-  // we should set the state to "unknown" here, but ESPHome doesn't have a way to do that (for switch entities).
-  this->assumed_state_ = true;
+
 }
+
 void HuaweiR4850Switch::handle_timeout() {
-  // we should set the state to "unavailable" here, but ESPHome doesn't have a way to do that:
-  // https://github.com/esphome/feature-requests/issues/1568
-  // and there isn't a way to set it to "unknown" either.
-  this->assumed_state_ = true;
+
 }
 
 }  // namespace huawei_r4850
