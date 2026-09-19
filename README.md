@@ -104,19 +104,23 @@ If setting one of these values causes the number input to reset, the value was o
 - **max_output_current**: Output current limit
 - **output_voltage_default**: Default output voltage
 - **max_output_current_default**: Default output current limit
-- **max_ac_current**: AC input current limit
+- **max_ac_current**: AC input current limit\* (0 = off), seems unsupported on the R4850G
 - **fan_duty_cycle**: PSU set fan duty cycle (0 = auto)
 
 Some of these values are saved persistently to the PSU, some additionally only apply when the PSU loses CAN connection:
 
 | Field                      | Persistent | Used while connected | Used while disconnected |
-| -------------------------- | :--------: | :------------------: | :---------------------: |
+|----------------------------|:----------:|:--------------------:|:-----------------------:|
 | output_voltage             |            |          X           |                         |
 | max_output_current         |            |          X           |                         |
 | output_voltage_default     |     X      |                      |            X            |
 | max_output_current_default |     X      |                      |            X            |
-| max_ac_current             |     X      |          X           |            X            |
+| max_ac_current             |    X\*     |          X           |            X            |
 | fan_duty_cycle             |            |          X           |                         |
+
+\* Only the AC input current limit _value_ is persisted, not whether the limit is _active_.  
+This means, when setting the limit to 0.1A (too low for startup) and then to 0 (off), the PSU will not start up anymore
+(fan will go full speed and output will be \<10V). To avoid this, set the limit to a high value (like 20A) before turning it off.
 
 Note that the values stored in the PSU itself cannot be read back from it, so
 the controller keeps track of the values it has set and restores those on boot.
