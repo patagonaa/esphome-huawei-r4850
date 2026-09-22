@@ -99,15 +99,6 @@ void HuaweiR4850Component::update() {
       this->canbus->send_data(canId, true, data);
     }
 
-    // Request E-label response just once
-    if (!has_received_elabel_response_) {
-      ESP_LOGD(TAG, "Sending E-label request message");
-      uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_ELABEL, true, false);
-      std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
-      this->canbus->send_data(canId, true, data);
-    }
-
-  #ifdef USE_SENSOR
     if (this->needs_fan_status_) {
       uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_REGISTER_GET, true, false);
       std::vector<uint8_t> data = {
@@ -115,7 +106,14 @@ void HuaweiR4850Component::update() {
       };
       this->canbus->send_data(canId, true, data);
     }
-  #endif
+
+    // Request E-label response just once
+    if (!has_received_elabel_response_) {
+      ESP_LOGD(TAG, "Sending E-label request message");
+      uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_ELABEL, true, false);
+      std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
+      this->canbus->send_data(canId, true, data);
+    }
   }
 
   // no recent unsolicited messages, mark as bad
@@ -186,174 +184,14 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
 
   uint8_t error_type = (message[0] & 0xF0) >> 4;
   uint16_t register_id = ((message[0] & 0x0F) << 8) | message[1];
+  std::vector<uint8_t> data(message.begin() + 2, message.end());
 
-  if (cmd == R48xx_CMD_DATA) {
-    int32_t value = (message[4] << 24) | (message[5] << 16) | (message[6] << 8) | message[7];
-    float conv_value = 0;
-    switch (register_id) {
-#ifdef USE_SENSOR
-      case R48xx_DATA_OPERATING_HOURS:
-        this->publish_sensor_state_(this->operating_hours_sensor_, value);
-        ESP_LOGV(TAG, "Operating Hours: %" PRIi32, value);
-        break;
-
-      case R48xx_DATA_INPUT_POWER:
-        conv_value = value / 1024.0f;
-        this->publish_sensor_state_(this->input_power_sensor_, conv_value);
-        ESP_LOGV(TAG, "Input power: %f", conv_value);
-        break;
-
-      case R48xx_DATA_INPUT_FREQ:
-        conv_value = value / 1024.0f;
-        this->publish_sensor_state_(this->input_frequency_sensor_, conv_value);
-        ESP_LOGV(TAG, "Input frequency: %f", conv_value);
-        break;
-
-      case R48xx_DATA_INPUT_CURRENT:
-        conv_value = value / 1024.0f;
-        this->publish_sensor_state_(this->input_current_sensor_, conv_value);
-        ESP_LOGV(TAG, "Input current: %f", conv_value);
-        break;
-
-      case R48xx_DATA_OUTPUT_POWER:
-        conv_value = value / 1024.0f;
-        this->publish_sensor_state_(this->output_power_sensor_, conv_value);
-        ESP_LOGV(TAG, "Output power: %f", conv_value);
-        break;
-
-      case R48xx_DATA_EFFICIENCY:
-        conv_value = value / 1024.0f * 100.0f;
-        this->publish_sensor_state_(this->efficiency_sensor_, conv_value);
-        ESP_LOGV(TAG, "Efficiency: %f", conv_value);
-        break;
-
-      case R48xx_DATA_OUTPUT_VOLTAGE:
-        conv_value = value / 1024.0f;
-        this->publish_sensor_state_(this->output_voltage_sensor_, conv_value);
-        ESP_LOGV(TAG, "Output voltage: %f", conv_value);
-        break;
-
-      case R48xx_DATA_OUTPUT_CURRENT_MAX:
-        // this is not equal to the value set via max_output_current
-        // as it is also set (according to the current AC input voltage) when AC limit is set
-        conv_value = value / 1250.0f * this->psu_max_current_;
-        this->publish_sensor_state_(this->output_current_setpoint_sensor_, conv_value);
-        ESP_LOGV(TAG, "Max Output current: %f", conv_value);
-        break;
-
-      case R48xx_DATA_INPUT_VOLTAGE:
-        conv_value = value / 1024.0f;
-        this->publish_sensor_state_(this->input_voltage_sensor_, conv_value);
-        ESP_LOGV(TAG, "Input voltage: %f", conv_value);
-        break;
-
-      case R48xx_DATA_OUTPUT_TEMPERATURE:
-        conv_value = value / 1024.0f;
-        this->publish_sensor_state_(this->output_temp_sensor_, conv_value);
-        ESP_LOGV(TAG, "Output temperature: %f", conv_value);
-        break;
-
-      case R48xx_DATA_INPUT_TEMPERATURE:
-        conv_value = value / 1024.0f;
-        this->publish_sensor_state_(this->input_temp_sensor_, conv_value);
-        ESP_LOGV(TAG, "Input temperature: %f", conv_value);
-        break;
-
-      case R48xx_DATA_OUTPUT_CURRENT_FAST:
-        conv_value = value / 1024.0f;
-        this->publish_sensor_state_(this->output_current_sensor_, conv_value);
-        ESP_LOGV(TAG, "Output current: %f", conv_value);
-        break;
-
-      case R48xx_DATA_OUTPUT_CURRENT_SLOW:
-        conv_value = value / 1024.0f;
-        ESP_LOGV(TAG, "Output current: %f", conv_value);
-        break;
-#endif // USE_SENSOR
-
-      case R48xx_DATA_STATUS_FLAGS:
-      {
-        uint16_t status_flags_ext = (message[2] << 8) | message[3];
-        uint32_t status_flags = (message[4] << 24) | (message[5] << 16) | (message[6] << 8) | message[7];
-
-#ifdef USE_BINARY_SENSOR
-        bool input_power_failure = status_flags & (1 << 29);
-        this->publish_sensor_state_(this->ac_present_binary_sensor_, !input_power_failure);
-#endif // USE_BINARY_SENSOR
-        break;
-      }
-
-      default:
-        ESP_LOGV(TAG, "Unknown status value %03x: %02x %02x %02x %02x %02x %02x", register_id, message[2], message[3], message[4], message[5], message[6], message[7])
-        break;
-    }
-  } else if (cmd == R48xx_CMD_REGISTER_GET) {
-#ifdef USE_SENSOR
-    if (error_type == 0) {
-      switch (register_id) {
-        case R48xx_DATA_FAN_STATUS:
-        {
-          uint16_t duty_min = ((message[2] << 8) | message[3]) / 256;
-          uint16_t duty_target = ((message[4] << 8) | message[5]) / 256;
-          uint16_t rpm = duty_target > 0 ? (message[6] << 8) | message[7] : 0; // rpm contains the last value even when fan is off due to no AC
-          this->publish_sensor_state_(this->fan_duty_cycle_min_sensor_, duty_min);
-          this->publish_sensor_state_(this->fan_duty_cycle_target_sensor_, duty_target);
-          this->publish_sensor_state_(this->fan_rpm_sensor_, rpm);
-          ESP_LOGV(TAG, "Fan status: min %d, target %d, rpm %d", duty_min, duty_target, rpm);
-          break;
-        }
-        default:
-          break;
-      }
-    } else {
-      ESP_LOGW(TAG, "Value %03x get error: %d", register_id, error_type);
-    }
-#endif // USE_SENSOR
+  if (cmd == R48xx_CMD_DATA || cmd == R48xx_CMD_REGISTER_GET) {
+    handle_status_update_(error_type, register_id, data);
   } else if (cmd == R48xx_CMD_CONTROL) {
-    std::vector<uint8_t> data(message.begin() + 2, message.end());
-    if (error_type == 0) {
-      for (auto &input : this->registered_inputs_) {
-        input->handle_update(register_id, data);
-      }
-      ESP_LOGD(TAG, "Value %03x set OK: %02x %02x %02x %02x %02x %02x", register_id, data[0], data[1], data[2], data[3], data[4], data[5]);
-    } else {
-      for (auto &input : this->registered_inputs_) {
-        input->handle_error(register_id, data);
-      }
-      ESP_LOGW(TAG, "Value %03x set error: %d", register_id, error_type);
-    }
+    handle_control_update_(error_type, register_id, data);
   } else if (cmd == R48xx_CMD_ELABEL) {
-    // Compose the full response string until complete
-    std::vector<uint8_t> data(message.begin() + 2, message.end());
-    raw_elabel_response_ += std::string(data.cbegin(), data.cend());
-
-    if (!incomplete) {
-      ESP_LOGI(TAG, "E-Label response received, populating sensors");
-      ELabelResponse elabel_response = parse_elabel_response(raw_elabel_response_);
-      raw_elabel_response_.clear();
-
-#ifdef ESPHOME_LOG_HAS_DEBUG
-      for (auto const &[key, value] : elabel_response) {
-        ESP_LOGD(TAG, "  %s: %s", key.c_str(), value.c_str());
-      }
-#endif // ESPHOME_LOG_HAS_DEBUG
-
-#ifdef USE_TEXT_SENSOR
-      std::map<std::string, text_sensor::TextSensor*> sensor_mappings = {
-        {"BoardType", board_type_text_sensor_},
-        {"BarCode", serial_number_text_sensor_},
-        {"Item", item_text_sensor_},
-        {"Model", model_text_sensor_},
-      };
-
-      for (auto const &[key, sensor] : sensor_mappings) {
-        if (elabel_response.contains(key)) {
-          this->publish_sensor_state_(sensor, elabel_response[key].c_str());
-        }
-      }
-#endif // USE_TEXT_SENSOR
-      has_received_elabel_response_ = true;
-    }
+    handle_elabel_(incomplete, register_id, data);
   } else if (cmd == R48xx_CMD_UNSOLICITED) {
     last_unsolicited_message_ = millis();
 
@@ -365,6 +203,175 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
       this->publish_sensor_state_(canbus_connectivity_binary_sensor_, true);
 #endif // USE_BINARY_SENSOR
     }
+  }
+}
+
+void HuaweiR4850Component::handle_status_update_(uint8_t error_type, uint16_t register_id, std::vector<uint8_t> &data)
+{
+  if (error_type != 0) {
+    ESP_LOGW(TAG, "Value %03x get error: %d", register_id, error_type);
+    return;
+  }
+
+  int32_t value = (data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5];
+  float conv_value = 0;
+  switch (register_id) {
+#ifdef USE_SENSOR
+    case R48xx_DATA_OPERATING_HOURS:
+      this->publish_sensor_state_(this->operating_hours_sensor_, value);
+      ESP_LOGV(TAG, "Operating Hours: %" PRIi32, value);
+      break;
+
+    case R48xx_DATA_INPUT_POWER:
+      conv_value = value / 1024.0f;
+      this->publish_sensor_state_(this->input_power_sensor_, conv_value);
+      ESP_LOGV(TAG, "Input power: %f", conv_value);
+      break;
+
+    case R48xx_DATA_INPUT_FREQ:
+      conv_value = value / 1024.0f;
+      this->publish_sensor_state_(this->input_frequency_sensor_, conv_value);
+      ESP_LOGV(TAG, "Input frequency: %f", conv_value);
+      break;
+
+    case R48xx_DATA_INPUT_CURRENT:
+      conv_value = value / 1024.0f;
+      this->publish_sensor_state_(this->input_current_sensor_, conv_value);
+      ESP_LOGV(TAG, "Input current: %f", conv_value);
+      break;
+
+    case R48xx_DATA_OUTPUT_POWER:
+      conv_value = value / 1024.0f;
+      this->publish_sensor_state_(this->output_power_sensor_, conv_value);
+      ESP_LOGV(TAG, "Output power: %f", conv_value);
+      break;
+
+    case R48xx_DATA_EFFICIENCY:
+      conv_value = value / 1024.0f * 100.0f;
+      this->publish_sensor_state_(this->efficiency_sensor_, conv_value);
+      ESP_LOGV(TAG, "Efficiency: %f", conv_value);
+      break;
+
+    case R48xx_DATA_OUTPUT_VOLTAGE:
+      conv_value = value / 1024.0f;
+      this->publish_sensor_state_(this->output_voltage_sensor_, conv_value);
+      ESP_LOGV(TAG, "Output voltage: %f", conv_value);
+      break;
+
+    case R48xx_DATA_OUTPUT_CURRENT_MAX:
+      // this is not equal to the value set via max_output_current
+      // as it is also set (according to the current AC input voltage) when AC limit is set
+      conv_value = value / 1250.0f * this->psu_max_current_;
+      this->publish_sensor_state_(this->output_current_setpoint_sensor_, conv_value);
+      ESP_LOGV(TAG, "Max Output current: %f", conv_value);
+      break;
+
+    case R48xx_DATA_INPUT_VOLTAGE:
+      conv_value = value / 1024.0f;
+      this->publish_sensor_state_(this->input_voltage_sensor_, conv_value);
+      ESP_LOGV(TAG, "Input voltage: %f", conv_value);
+      break;
+
+    case R48xx_DATA_OUTPUT_TEMPERATURE:
+      conv_value = value / 1024.0f;
+      this->publish_sensor_state_(this->output_temp_sensor_, conv_value);
+      ESP_LOGV(TAG, "Output temperature: %f", conv_value);
+      break;
+
+    case R48xx_DATA_INPUT_TEMPERATURE:
+      conv_value = value / 1024.0f;
+      this->publish_sensor_state_(this->input_temp_sensor_, conv_value);
+      ESP_LOGV(TAG, "Input temperature: %f", conv_value);
+      break;
+
+    case R48xx_DATA_OUTPUT_CURRENT_FAST:
+      conv_value = value / 1024.0f;
+      this->publish_sensor_state_(this->output_current_sensor_, conv_value);
+      ESP_LOGV(TAG, "Output current: %f", conv_value);
+      break;
+
+    case R48xx_DATA_OUTPUT_CURRENT_SLOW:
+      conv_value = value / 1024.0f;
+      ESP_LOGV(TAG, "Output current: %f", conv_value);
+      break;
+
+    case R48xx_DATA_FAN_STATUS:
+    {
+      uint16_t duty_min = ((data[0] << 8) | data[1]) / 256;
+      uint16_t duty_target = ((data[2] << 8) | data[3]) / 256;
+      uint16_t rpm = duty_target > 0 ? (data[4] << 8) | data[5] : 0; // rpm contains the last value even when fan is off due to no AC
+      this->publish_sensor_state_(this->fan_duty_cycle_min_sensor_, duty_min);
+      this->publish_sensor_state_(this->fan_duty_cycle_target_sensor_, duty_target);
+      this->publish_sensor_state_(this->fan_rpm_sensor_, rpm);
+      ESP_LOGV(TAG, "Fan status: min %d, target %d, rpm %d", duty_min, duty_target, rpm);
+      break;
+    }
+#endif // USE_SENSOR
+
+    case R48xx_DATA_STATUS_FLAGS:
+    {
+      uint16_t status_flags_ext = (data[0] << 8) | data[1];
+      uint32_t status_flags = (data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5];
+
+#ifdef USE_BINARY_SENSOR
+      bool input_power_failure = status_flags & (1 << 29);
+      this->publish_sensor_state_(this->ac_present_binary_sensor_, !input_power_failure);
+#endif // USE_BINARY_SENSOR
+      break;
+    }
+
+    default:
+      ESP_LOGV(TAG, "Unknown status value %03x: %02x %02x %02x %02x %02x %02x", register_id, data[0], data[1], data[2], data[3], data[4], data[5]);
+      break;
+  }
+}
+
+void HuaweiR4850Component::handle_control_update_(uint8_t error_type, uint16_t register_id, std::vector<uint8_t> &data)
+{
+  if (error_type == 0) {
+    for (auto &input : this->registered_inputs_) {
+      input->handle_update(register_id, data);
+    }
+    ESP_LOGD(TAG, "Value %03x set OK: %02x %02x %02x %02x %02x %02x", register_id, data[0], data[1], data[2], data[3], data[4], data[5]);
+  } else {
+    for (auto &input : this->registered_inputs_) {
+      input->handle_error(register_id, data);
+    }
+    ESP_LOGW(TAG, "Value %03x set error: %d", register_id, error_type);
+  }
+}
+
+void HuaweiR4850Component::handle_elabel_(bool incomplete, uint16_t register_id, std::vector<uint8_t> &data)
+{
+  // Compose the full response string until complete
+  raw_elabel_response_ += std::string(data.cbegin(), data.cend());
+
+  if (!incomplete) {
+    ESP_LOGI(TAG, "E-Label response received, populating sensors");
+    ELabelResponse elabel_response = parse_elabel_response(raw_elabel_response_);
+    raw_elabel_response_.clear();
+
+#ifdef ESPHOME_LOG_HAS_DEBUG
+    for (auto const &[key, value] : elabel_response) {
+      ESP_LOGD(TAG, "  %s: %s", key.c_str(), value.c_str());
+    }
+#endif // ESPHOME_LOG_HAS_DEBUG
+
+#ifdef USE_TEXT_SENSOR
+    std::map<std::string, text_sensor::TextSensor*> sensor_mappings = {
+      {"BoardType", board_type_text_sensor_},
+      {"BarCode", serial_number_text_sensor_},
+      {"Item", item_text_sensor_},
+      {"Model", model_text_sensor_},
+    };
+
+    for (auto const &[key, sensor] : sensor_mappings) {
+      if (elabel_response.contains(key)) {
+        this->publish_sensor_state_(sensor, elabel_response[key].c_str());
+      }
+    }
+#endif // USE_TEXT_SENSOR
+    has_received_elabel_response_ = true;
   }
 }
 

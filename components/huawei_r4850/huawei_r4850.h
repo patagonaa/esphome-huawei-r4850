@@ -99,6 +99,7 @@ class HuaweiR4850Component : public PollingComponent {
   float psu_max_current_;
   uint8_t psu_addr_;
 
+  bool needs_fan_status_{0};
   bool has_received_elabel_response_ = false;
   std::string raw_elabel_response_;
   uint32_t last_unsolicited_message_{0};
@@ -114,7 +115,6 @@ class HuaweiR4850Component : public PollingComponent {
   sensor::Sensor *fan_duty_cycle_min_sensor_{nullptr};
   sensor::Sensor *fan_duty_cycle_target_sensor_{nullptr};
   sensor::Sensor *fan_rpm_sensor_{nullptr};
-  bool needs_fan_status_{0};
 #endif // USE_SENSOR
 
 #ifdef USE_TEXT_SENSOR
@@ -136,6 +136,10 @@ class HuaweiR4850Component : public PollingComponent {
   std::vector<HuaweiR4850Input *> registered_inputs_{};
 
   void on_frame(uint32_t can_id, bool extended_id, bool rtr, const std::vector<uint8_t> &message);
+
+  void handle_status_update_(uint8_t error_type, uint16_t register_id, std::vector<uint8_t> &data);
+  void handle_control_update_(uint8_t error_type, uint16_t register_id, std::vector<uint8_t> &data);
+  void handle_elabel_(bool incomplete, uint16_t register_id, std::vector<uint8_t> &data);
 
   uint32_t canid_pack_(uint8_t addr, uint8_t command, bool src_controller, bool incomplete);
   void canid_unpack_(uint32_t canId, uint8_t *addr, uint8_t *command, bool *src_controller, bool *incomplete);
