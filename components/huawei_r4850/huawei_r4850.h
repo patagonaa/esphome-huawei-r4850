@@ -51,7 +51,6 @@ class HuaweiR4850Component : public PollingComponent {
 #ifdef USE_BINARY_SENSOR
   SUB_BINARY_SENSOR(canbus_connectivity)
   SUB_BINARY_SENSOR(ac_present)
-  SUB_BINARY_SENSOR(current_limiting)
 #endif // USE_BINARY_SENSOR
 
  public:

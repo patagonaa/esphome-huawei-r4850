@@ -10,7 +10,6 @@ ICON_POWER_PLUG = "mdi:power-plug"
 
 CONF_CANBUS_CONNECTIVITY = "canbus_connectivity"
 CONF_AC_PRESENT = "ac_present"
-CONF_CURRENT_LIMITING = "current_limiting"
 
 BINARY_SENSORS = {
     CONF_CANBUS_CONNECTIVITY: binary_sensor.binary_sensor_schema(
@@ -19,9 +18,6 @@ BINARY_SENSORS = {
     ),
     CONF_AC_PRESENT: binary_sensor.binary_sensor_schema(
         icon=ICON_POWER_PLUG,
-    ),
-    CONF_CURRENT_LIMITING: binary_sensor.binary_sensor_schema(
-        icon=ICON_CURRENT_DC,
     ),
 }
 

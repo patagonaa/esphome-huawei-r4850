@@ -277,8 +277,6 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
         uint32_t status_flags = (message[4] << 24) | (message[5] << 16) | (message[6] << 8) | message[7];
 
 #ifdef USE_BINARY_SENSOR
-        bool current_limiting = status_flags & (1 << 28);
-        this->publish_sensor_state_(this->current_limiting_binary_sensor_, current_limiting);
         bool input_power_failure = status_flags & (1 << 29);
         this->publish_sensor_state_(this->ac_present_binary_sensor_, !input_power_failure);
 #endif // USE_BINARY_SENSOR
