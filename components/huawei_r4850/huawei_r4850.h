@@ -26,6 +26,7 @@ class HuaweiR4850Input {
 };
 
 enum class R4850InitStatus {
+  Disconnected,
   Init,
   GetElabel,
   Ready,
@@ -111,9 +112,8 @@ class HuaweiR4850Component : public PollingComponent {
   std::string raw_elabel_response_;
 
   uint32_t last_unsolicited_message_{0};
-  bool canbus_connectivity_ = false;
 
-  R4850InitStatus init_status_ = R4850InitStatus::Init;
+  R4850InitStatus init_status_ = R4850InitStatus::Disconnected;
   uint32_t last_init_request_{0};
 
 #ifdef USE_SENSOR
@@ -148,6 +148,7 @@ class HuaweiR4850Component : public PollingComponent {
 
   void on_frame(uint32_t can_id, bool extended_id, bool rtr, const std::vector<uint8_t> &message);
 
+  void handle_timeout_();
   void handle_status_update_(uint8_t error_type, uint16_t register_id, std::vector<uint8_t> &data);
   void handle_control_update_(uint8_t error_type, uint16_t register_id, std::vector<uint8_t> &data);
   void handle_elabel_(bool incomplete, uint16_t register_id, std::vector<uint8_t> &data);

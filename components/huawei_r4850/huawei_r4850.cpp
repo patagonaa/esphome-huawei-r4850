@@ -82,7 +82,7 @@ void HuaweiR4850Component::set_resend_interval(uint32_t interval) {
 }
 
 void HuaweiR4850Component::resend_inputs() {
-  if (canbus_connectivity_) {
+  if (init_status_ == R4850InitStatus::Ready) {
     for (auto &input : this->registered_inputs_) {
       input->handle_resend();
     }
@@ -90,37 +90,52 @@ void HuaweiR4850Component::resend_inputs() {
 }
 
 void HuaweiR4850Component::loop() {
-  if (!canbus_connectivity_ || init_status_ == R4850InitStatus::Ready)
-    return;
-
-  switch (init_status_)
-  {
-  case R4850InitStatus::Init:
-    has_received_elabel_response_ = false;
-    last_init_request_ = 0;
-    init_status_ = R4850InitStatus::GetElabel;
-    break;
-
-  case R4850InitStatus::GetElabel:
-  {
-    if (has_received_elabel_response_) {
-      ESP_LOGD(TAG, "Received E-label response");
-      init_status_ = R4850InitStatus::Ready;
+  // unsolicited messages should be received every ~377ms. Wait some extra time to make sure one was actually
+  // supposed to arrive and no other components delayed CAN receive enough to trigger this.
+  bool can_connected = last_unsolicited_message_ != 0 && (millis() - last_unsolicited_message_ < 1000);
+  if (!can_connected && init_status_ != R4850InitStatus::Disconnected) {
+#ifdef USE_BINARY_SENSOR
+    this->publish_sensor_state_(canbus_connectivity_binary_sensor_, false);
+#endif // USE_BINARY_SENSOR
+    handle_timeout_();
+    ESP_LOGW(TAG, "No unsolicited messages received lately, stopping polling");
+    init_status_ = R4850InitStatus::Disconnected;
+  } else if (can_connected && init_status_ == R4850InitStatus::Disconnected) {
+#ifdef USE_BINARY_SENSOR
+    this->publish_sensor_state_(canbus_connectivity_binary_sensor_, true);
+#endif // USE_BINARY_SENSOR
+    ESP_LOGI(TAG, "Got unsolicited messages on CAN bus, starting init");
+    init_status_ = R4850InitStatus::Init;
+  } else {
+    switch (init_status_)
+    {
+    case R4850InitStatus::Init:
+      has_received_elabel_response_ = false;
       last_init_request_ = 0;
-    } else if (last_init_request_ == 0 || millis() - last_init_request_ > 5000) {
-      ESP_LOGD(TAG, "Sending E-label request");
-      raw_elabel_response_.clear();
+      init_status_ = R4850InitStatus::GetElabel;
+      break;
 
-      uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_ELABEL, true, false);
-      std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
-      this->canbus->send_data(canId, true, data);
-      last_init_request_ = millis();
+    case R4850InitStatus::GetElabel:
+    {
+      if (has_received_elabel_response_) {
+        ESP_LOGD(TAG, "Received E-label response");
+        init_status_ = R4850InitStatus::Ready;
+        last_init_request_ = 0;
+      } else if (last_init_request_ == 0 || millis() - last_init_request_ > 5000) {
+        ESP_LOGD(TAG, "Sending E-label request");
+        raw_elabel_response_.clear();
+
+        uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_ELABEL, true, false);
+        std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
+        this->canbus->send_data(canId, true, data);
+        last_init_request_ = millis();
+      }
+      break;
     }
-    break;
-  }
-  
-  default:
-    break;
+    
+    default:
+      break;
+    }
   }
 }
 
@@ -139,42 +154,6 @@ void HuaweiR4850Component::update() {
         (uint8_t)((R48xx_DATA_FAN_STATUS & 0xF00) >> 8), (uint8_t)(R48xx_DATA_FAN_STATUS & 0x0FF), 0, 0, 0, 0, 0, 0
       };
       this->canbus->send_data(canId, true, data);
-    }
-  }
-
-  // no recent unsolicited messages, mark as bad
-  // unsolicited messages should be received every ~377ms.
-  // wait at least 500ms to make sure one was actually supposed to arrive.
-  if (canbus_connectivity_ && last_unsolicited_message_ != 0 && (millis() - last_unsolicited_message_ > std::max<uint32_t>(update_interval_, 500))) {
-    canbus_connectivity_ = false;
-    init_status_ = R4850InitStatus::Init;
-    ESP_LOGW(TAG, "No unsolicited messages received lately, stopping polling");
-
-#ifdef USE_BINARY_SENSOR
-    this->publish_sensor_state_(canbus_connectivity_binary_sensor_, false);
-#endif // USE_BINARY_SENSOR
-
-    // canbus disconnected -> set sensors to NAN
-#ifdef USE_SENSOR
-    this->publish_sensor_state_(this->operating_hours_sensor_, NAN);
-    this->publish_sensor_state_(this->input_voltage_sensor_, NAN);
-    this->publish_sensor_state_(this->input_frequency_sensor_, NAN);
-    this->publish_sensor_state_(this->input_current_sensor_, NAN);
-    this->publish_sensor_state_(this->input_power_sensor_, NAN);
-    this->publish_sensor_state_(this->input_temp_sensor_, NAN);
-    this->publish_sensor_state_(this->efficiency_sensor_, NAN);
-    this->publish_sensor_state_(this->output_voltage_sensor_, NAN);
-    this->publish_sensor_state_(this->output_current_sensor_, NAN);
-    this->publish_sensor_state_(this->output_current_setpoint_sensor_, NAN);
-    this->publish_sensor_state_(this->output_power_sensor_, NAN);
-    this->publish_sensor_state_(this->output_temp_sensor_, NAN);
-    this->publish_sensor_state_(this->fan_duty_cycle_min_sensor_, NAN);
-    this->publish_sensor_state_(this->fan_duty_cycle_target_sensor_, NAN);
-    this->publish_sensor_state_(this->fan_rpm_sensor_, NAN);
-#endif // USE_SENSOR
-
-    for (auto &input : this->registered_inputs_) {
-      input->handle_timeout();
     }
   }
 }
@@ -221,15 +200,32 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
     handle_elabel_(incomplete, register_id, data);
   } else if (cmd == R48xx_CMD_UNSOLICITED) {
     last_unsolicited_message_ = millis();
+  }
+}
 
-    if (!canbus_connectivity_) {
-      canbus_connectivity_ = true;
-      ESP_LOGI(TAG, "Got unsolicited messages on CAN bus, resuming polling");
+void HuaweiR4850Component::handle_timeout_()
+{
+  // canbus disconnected -> set sensors to NAN
+#ifdef USE_SENSOR
+  this->publish_sensor_state_(this->operating_hours_sensor_, NAN);
+  this->publish_sensor_state_(this->input_voltage_sensor_, NAN);
+  this->publish_sensor_state_(this->input_frequency_sensor_, NAN);
+  this->publish_sensor_state_(this->input_current_sensor_, NAN);
+  this->publish_sensor_state_(this->input_power_sensor_, NAN);
+  this->publish_sensor_state_(this->input_temp_sensor_, NAN);
+  this->publish_sensor_state_(this->efficiency_sensor_, NAN);
+  this->publish_sensor_state_(this->output_voltage_sensor_, NAN);
+  this->publish_sensor_state_(this->output_current_sensor_, NAN);
+  this->publish_sensor_state_(this->output_current_setpoint_sensor_, NAN);
+  this->publish_sensor_state_(this->output_power_sensor_, NAN);
+  this->publish_sensor_state_(this->output_temp_sensor_, NAN);
+  this->publish_sensor_state_(this->fan_duty_cycle_min_sensor_, NAN);
+  this->publish_sensor_state_(this->fan_duty_cycle_target_sensor_, NAN);
+  this->publish_sensor_state_(this->fan_rpm_sensor_, NAN);
+#endif // USE_SENSOR
 
-#ifdef USE_BINARY_SENSOR
-      this->publish_sensor_state_(canbus_connectivity_binary_sensor_, true);
-#endif // USE_BINARY_SENSOR
-    }
+  for (auto &input : this->registered_inputs_) {
+    input->handle_timeout();
   }
 }
 
