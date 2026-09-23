@@ -89,9 +89,43 @@ void HuaweiR4850Component::resend_inputs() {
   }
 }
 
+void HuaweiR4850Component::loop() {
+  if (!canbus_connectivity_ || init_status_ == R4850InitStatus::Ready)
+    return;
+
+  switch (init_status_)
+  {
+  case R4850InitStatus::Init:
+    has_received_elabel_response_ = false;
+    last_init_request_ = 0;
+    init_status_ = R4850InitStatus::GetElabel;
+    break;
+
+  case R4850InitStatus::GetElabel:
+  {
+    if (has_received_elabel_response_) {
+      ESP_LOGD(TAG, "Received E-label response");
+      init_status_ = R4850InitStatus::Ready;
+      last_init_request_ = 0;
+    } else if (last_init_request_ == 0 || millis() - last_init_request_ > 5000) {
+      ESP_LOGD(TAG, "Sending E-label request");
+      raw_elabel_response_.clear();
+
+      uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_ELABEL, true, false);
+      std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
+      this->canbus->send_data(canId, true, data);
+      last_init_request_ = millis();
+    }
+    break;
+  }
+  
+  default:
+    break;
+  }
+}
+
 void HuaweiR4850Component::update() {
-  // Don't bother polling until the bus is determined to be active
-  if (canbus_connectivity_) {
+  if (init_status_ == R4850InitStatus::Ready) {
     ESP_LOGD(TAG, "Sending data request message");
     {
       uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_DATA, true, false);
@@ -106,14 +140,6 @@ void HuaweiR4850Component::update() {
       };
       this->canbus->send_data(canId, true, data);
     }
-
-    // Request E-label response just once
-    if (!has_received_elabel_response_) {
-      ESP_LOGD(TAG, "Sending E-label request message");
-      uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_ELABEL, true, false);
-      std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
-      this->canbus->send_data(canId, true, data);
-    }
   }
 
   // no recent unsolicited messages, mark as bad
@@ -121,6 +147,7 @@ void HuaweiR4850Component::update() {
   // wait at least 500ms to make sure one was actually supposed to arrive.
   if (canbus_connectivity_ && last_unsolicited_message_ != 0 && (millis() - last_unsolicited_message_ > std::max<uint32_t>(update_interval_, 500))) {
     canbus_connectivity_ = false;
+    init_status_ = R4850InitStatus::Init;
     ESP_LOGW(TAG, "No unsolicited messages received lately, stopping polling");
 
 #ifdef USE_BINARY_SENSOR

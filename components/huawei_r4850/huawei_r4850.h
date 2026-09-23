@@ -25,6 +25,12 @@ class HuaweiR4850Input {
     virtual void handle_resend() = 0;
 };
 
+enum class R4850InitStatus {
+  Init,
+  GetElabel,
+  Ready,
+};
+
 class HuaweiR4850Component : public PollingComponent {
 #ifdef USE_SENSOR
   SUB_SENSOR(operating_hours)
@@ -56,6 +62,7 @@ class HuaweiR4850Component : public PollingComponent {
  public:
   HuaweiR4850Component(canbus::Canbus *canbus);
   void setup() override;
+  void loop() override;
   void update() override;
 
   void set_value(uint16_t register_id, std::vector<uint8_t> &data);
@@ -102,8 +109,12 @@ class HuaweiR4850Component : public PollingComponent {
   bool needs_fan_status_{0};
   bool has_received_elabel_response_ = false;
   std::string raw_elabel_response_;
+
   uint32_t last_unsolicited_message_{0};
   bool canbus_connectivity_ = false;
+
+  R4850InitStatus init_status_ = R4850InitStatus::Init;
+  uint32_t last_init_request_{0};
 
 #ifdef USE_SENSOR
   void publish_sensor_state_(sensor::Sensor *sensor, float state) {
