@@ -46,6 +46,12 @@ void HuaweiR4850Switch::handle_error(uint16_t register_id, std::vector<uint8_t> 
 
 }
 
+void HuaweiR4850Switch::handle_connected() {
+  if (this->last_state_.has_value()) {
+    this->send_state_(this->last_state_.value());
+  }
+}
+
 void HuaweiR4850Switch::handle_timeout() {
 
 }

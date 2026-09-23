@@ -120,6 +120,9 @@ void HuaweiR4850Component::loop() {
       if (has_received_elabel_response_) {
         ESP_LOGD(TAG, "Received E-label response");
         init_status_ = R4850InitStatus::Ready;
+        for (auto &input : this->registered_inputs_) {
+          input->handle_connected();
+        }
         last_init_request_ = 0;
       } else if (last_init_request_ == 0 || millis() - last_init_request_ > 5000) {
         ESP_LOGD(TAG, "Sending E-label request");
@@ -159,10 +162,13 @@ void HuaweiR4850Component::update() {
 }
 
 void HuaweiR4850Component::set_value(uint16_t register_id, std::vector<uint8_t> &data) {
-  if(data.size() != 6)
-  {
+  if (data.size() != 6) {
     ESP_LOGE(TAG, "Invalid data count for register id %03x", register_id);
     return;
+  }
+
+  if (init_status_ != R4850InitStatus::Ready) {
+    ESP_LOGW(TAG, "Value %03x set error: not connected", register_id);
   }
 
   uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_CONTROL, true, false);
