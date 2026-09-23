@@ -34,7 +34,6 @@ huawei_r4850:
     update_interval: 5s
     resend_interval: 5s
     psu_address: 1 # 1 = first PSU, 2 = second, ...
-    psu_max_current: 53.5 # ~53.5 for R4850G6, ~42.6 for R4830S1
 ```
 
 - **id**: ID of this component
@@ -42,9 +41,6 @@ huawei_r4850:
 - **update_interval** ([Time](https://esphome.io/guides/configuration-types#config-time), Default `5s`): Update interval for sensors
 - **resend_interval** ([Time](https://esphome.io/guides/configuration-types#config-time), Default `5s`): Interval for numbers and switches with `resend: true` to resend their state (see [Resend](#resend))
 - **psu_address** (int, Required): Address of the PSU (1 = first PSU, 2 = second, ...)
-- **psu_max_current** (float, Required): Max current rating of the PSU (~87.0 for R4875G5, ~53.5 for R4850G6, ~42.6 for R4830S1).
-
-If the value of the `output_current_setpoint` sensor doesn't match the value of the `output_current` sensor (while the PSU is current limiting), multiply `psu_max_current` by `output_current / output_current_setpoint` (sensor values).
 
 
 ### Sensors

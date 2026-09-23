@@ -39,12 +39,10 @@ huawei_r4850:
     canbus_id: can
     update_interval: 5s
     psu_address: 1 # 1 = first PSU, 2 = second, ...
-    psu_max_current: 53.5 # ~53.5 for R4850G6, ~42.6 for R4830S1
 #  - id: huawei_r4850_2
 #    canbus_id: can
 #    update_interval: 5s
 #    psu_address: 2
-#    psu_max_current: 53.5
 
 
 sensor:

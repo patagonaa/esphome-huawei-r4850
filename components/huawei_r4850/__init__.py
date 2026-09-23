@@ -8,7 +8,6 @@ MULTI_CONF = True
 CONF_CANBUS_ID = "canbus_id"
 CONF_HUAWEI_R4850_ID = "huawei_r4850_id"
 CONF_PSU_ADDRESS = "psu_address"
-CONF_PSU_MAX_CURRENT = "psu_max_current"
 CONF_RESEND_INTERVAL = "resend_interval"
 
 huawei_r4850_ns = cg.esphome_ns.namespace("huawei_r4850")
@@ -27,9 +26,6 @@ CONFIG_SCHEMA = cv.Schema(
         cv.GenerateID(): cv.declare_id(HuaweiR4850Component),
         cv.Required(CONF_CANBUS_ID): cv.use_id(CanbusComponent),
         cv.Required(CONF_PSU_ADDRESS): cv.int_range(min=1, max=127),
-        cv.Required(CONF_PSU_MAX_CURRENT): cv.float_range(
-            min=0, min_included=False
-        ),
         cv.Optional(CONF_RESEND_INTERVAL, default="5s"): cv.update_interval,
     }
 ).extend(cv.polling_component_schema("5s"))
@@ -42,5 +38,4 @@ async def to_code(config):
 
     hub = await cg.get_variable(config[CONF_ID])
     cg.add(hub.set_psu_address(config[CONF_PSU_ADDRESS]))
-    cg.add(hub.set_psu_max_current(config[CONF_PSU_MAX_CURRENT]))
     cg.add(hub.set_resend_interval(config[CONF_RESEND_INTERVAL]))

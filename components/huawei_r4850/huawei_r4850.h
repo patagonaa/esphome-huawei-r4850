@@ -30,6 +30,7 @@ enum class R4850InitStatus {
   Disconnected,
   Init,
   GetElabel,
+  GetInfo,
   Ready,
 };
 
@@ -92,12 +93,8 @@ class HuaweiR4850Component : public PollingComponent {
     this->psu_addr_ = value;
   }
 
-  void set_psu_max_current(float value) {
-    psu_max_current_ = value;
-  }
-
-  float get_psu_max_current() {
-    return psu_max_current_;
+  esphome::optional<float> get_psu_nominal_current() {
+    return psu_nominal_current_;
   }
 
   void set_resend_interval(uint32_t interval);
@@ -105,17 +102,20 @@ class HuaweiR4850Component : public PollingComponent {
 
  protected:
   canbus::Canbus *canbus;
-  float psu_max_current_;
   uint8_t psu_addr_;
-
-  bool needs_fan_status_{0};
-  bool has_received_elabel_response_ = false;
-  std::string raw_elabel_response_;
-
-  uint32_t last_unsolicited_message_{0};
 
   R4850InitStatus init_status_ = R4850InitStatus::Disconnected;
   uint32_t last_init_request_{0};
+
+  bool needs_fan_status_{0};
+
+  uint32_t last_unsolicited_message_{0};
+
+  bool has_received_elabel_response_ = false;
+  std::string raw_elabel_response_;
+
+  bool has_received_info_response_ = false;
+  esphome::optional<float> psu_nominal_current_{};
 
 #ifdef USE_SENSOR
   void publish_sensor_state_(sensor::Sensor *sensor, float state) {
@@ -153,6 +153,7 @@ class HuaweiR4850Component : public PollingComponent {
   void handle_status_update_(uint8_t error_type, uint16_t register_id, std::vector<uint8_t> &data);
   void handle_control_update_(uint8_t error_type, uint16_t register_id, std::vector<uint8_t> &data);
   void handle_elabel_(bool incomplete, uint16_t register_id, std::vector<uint8_t> &data);
+  void handle_info_(bool incomplete, uint16_t register_id, std::vector<uint8_t> &data);
 
   uint32_t canid_pack_(uint8_t addr, uint8_t command, bool src_controller, bool incomplete);
   void canid_unpack_(uint32_t canId, uint8_t *addr, uint8_t *command, bool *src_controller, bool *incomplete);

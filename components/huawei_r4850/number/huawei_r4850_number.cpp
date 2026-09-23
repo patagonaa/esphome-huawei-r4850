@@ -4,6 +4,8 @@
 namespace esphome {
 namespace huawei_r4850 {
 
+static const char *const TAG = "huawei_r4850_number";
+
 static const uint16_t SET_VOLTAGE_FUNCTION = 0x100;
 static const uint16_t SET_DEFAULT_VOLTAGE_FUNCTION = 0x101;
 static const uint16_t SET_CURRENT_FUNCTION = 0x103;
@@ -56,9 +58,18 @@ void HuaweiR4850Number::send_state_(float value) {
     case SET_CURRENT_FUNCTION:
     case SET_DEFAULT_CURRENT_FUNCTION:
     {
-      int32_t raw = value / this->parent_->get_psu_max_current() * 1250.0f;
-      std::vector<uint8_t> data = {0x00, 0x00, (uint8_t)((raw >> 24) & 0xFF), (uint8_t)((raw >> 16) & 0xFF), (uint8_t)((raw >> 8) & 0xFF), (uint8_t)(raw & 0xFF)};
-      this->parent_->set_value(this->registerId_, data);
+      esphome::optional<float> nominal_current = this->parent_->get_psu_nominal_current();
+      if (nominal_current.has_value()) {
+        int32_t raw = value / nominal_current.value() * 1024.0f;
+        if (raw > 1250) {
+          ESP_LOGW(TAG, "Can't set current limit above max. current, setting to max (%.2fA)", nominal_current.value() / 1024.0f * 1250.0f);
+          raw = 1250;
+        }
+        std::vector<uint8_t> data = {0x00, 0x00, (uint8_t)((raw >> 24) & 0xFF), (uint8_t)((raw >> 16) & 0xFF), (uint8_t)((raw >> 8) & 0xFF), (uint8_t)(raw & 0xFF)};
+        this->parent_->set_value(this->registerId_, data);
+      } else {
+        ESP_LOGW(TAG, "Can't set current limit without nominal current");
+      }
       break;
     }
 
@@ -106,8 +117,14 @@ void HuaweiR4850Number::handle_update(uint16_t register_id, std::vector<uint8_t>
     case SET_CURRENT_FUNCTION:
     case SET_DEFAULT_CURRENT_FUNCTION:
     {
-      int32_t raw = (data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5];
-      value = raw / 1250.0f * this->parent_->get_psu_max_current();
+      esphome::optional<float> nominal_current = this->parent_->get_psu_nominal_current();
+      if (nominal_current.has_value()) {
+        int32_t raw = (data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5];
+        value = raw / 1024.0f * nominal_current.value();
+      } else {
+        ESP_LOGW(TAG, "Can't set current limit without nominal current");
+        value = NAN;
+      }
       break;
     }
 
