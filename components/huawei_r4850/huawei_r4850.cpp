@@ -17,10 +17,13 @@ namespace huawei_r4850 {
 static const char *const TAG = "huawei_r4850";
 
 static const uint8_t R48xx_CMD_DATA = 0x40;
+static const uint8_t R48xx_CMD_INFO = 0x50;
 static const uint8_t R48xx_CMD_ELABEL = 0xD2;
 static const uint8_t R48xx_CMD_CONTROL = 0x80;
 static const uint8_t R48xx_CMD_REGISTER_GET = 0x82;
 static const uint8_t R48xx_CMD_UNSOLICITED = 0x11;
+
+static const uint16_t R48xx_INFO_CHARACTERISTIC_DATA = 0x001;
 
 static const uint16_t R48xx_DATA_OPERATING_HOURS = 0x10E;
 static const uint16_t R48xx_DATA_INPUT_POWER = 0x170;
@@ -104,40 +107,58 @@ void HuaweiR4850Component::loop() {
 #ifdef USE_BINARY_SENSOR
     this->publish_sensor_state_(canbus_connectivity_binary_sensor_, true);
 #endif // USE_BINARY_SENSOR
-    ESP_LOGI(TAG, "Got unsolicited messages on CAN bus, starting init");
+    ESP_LOGI(TAG, "Got unsolicited messages on CAN bus -> init");
     init_status_ = R4850InitStatus::Init;
   } else {
-    switch (init_status_)
-    {
-    case R4850InitStatus::Init:
-      has_received_elabel_response_ = false;
-      last_init_request_ = 0;
-      init_status_ = R4850InitStatus::GetElabel;
-      break;
-
-    case R4850InitStatus::GetElabel:
-    {
-      if (has_received_elabel_response_) {
-        ESP_LOGD(TAG, "Received E-label response");
-        init_status_ = R4850InitStatus::Ready;
-        for (auto &input : this->registered_inputs_) {
-          input->handle_connected();
-        }
+    switch (init_status_) {
+      case R4850InitStatus::Init:
+        has_received_elabel_response_ = false;
+        has_received_info_response_ = false;
         last_init_request_ = 0;
-      } else if (last_init_request_ == 0 || millis() - last_init_request_ > 5000) {
-        ESP_LOGD(TAG, "Sending E-label request");
-        raw_elabel_response_.clear();
+        init_status_ = R4850InitStatus::GetElabel;
+        break;
 
-        uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_ELABEL, true, false);
-        std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
-        this->canbus->send_data(canId, true, data);
-        last_init_request_ = millis();
+      case R4850InitStatus::GetElabel:
+      {
+        if (has_received_elabel_response_) {
+          ESP_LOGI(TAG, "Received E-label response -> getting PSU info");
+          init_status_ = R4850InitStatus::GetInfo;
+          last_init_request_ = 0;
+        } else if (last_init_request_ == 0 || millis() - last_init_request_ > 5000) {
+          ESP_LOGD(TAG, "Sending E-label request");
+          raw_elabel_response_.clear();
+
+          uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_ELABEL, true, false);
+          std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
+          this->canbus->send_data(canId, true, data);
+          last_init_request_ = millis();
+        }
+        break;
       }
-      break;
-    }
-    
-    default:
-      break;
+
+      case R4850InitStatus::GetInfo:
+      {
+        if (has_received_info_response_) {
+          ESP_LOGI(TAG, "Received PSU info response -> ready to poll");
+          init_status_ = R4850InitStatus::Ready;
+          for (auto &input : this->registered_inputs_) {
+            input->handle_connected();
+          }
+          last_init_request_ = 0;
+        } else if (last_init_request_ == 0 || millis() - last_init_request_ > 5000) {
+          ESP_LOGD(TAG, "Sending PSU info request");
+          psu_nominal_current_.reset();
+
+          uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_INFO, true, false);
+          std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
+          this->canbus->send_data(canId, true, data);
+          last_init_request_ = millis();
+        }
+        break;
+      }
+      
+      default:
+        break;
     }
   }
 }
@@ -204,6 +225,8 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
     handle_control_update_(error_type, register_id, data);
   } else if (cmd == R48xx_CMD_ELABEL) {
     handle_elabel_(incomplete, register_id, data);
+  } else if (cmd == R48xx_CMD_INFO) {
+    handle_info_(incomplete, register_id, data);
   } else if (cmd == R48xx_CMD_UNSOLICITED) {
     last_unsolicited_message_ = millis();
   }
@@ -290,7 +313,7 @@ void HuaweiR4850Component::handle_status_update_(uint8_t error_type, uint16_t re
     case R48xx_DATA_OUTPUT_CURRENT_MAX:
       // this is not equal to the value set via max_output_current
       // as it is also set (according to the current AC input voltage) when AC limit is set
-      conv_value = value / 1250.0f * this->psu_max_current_;
+      conv_value = value / 1024.0f * this->psu_nominal_current_.value_or(NAN);
       this->publish_sensor_state_(this->output_current_setpoint_sensor_, conv_value);
       ESP_LOGV(TAG, "Max Output current: %f", conv_value);
       break;
@@ -376,7 +399,6 @@ void HuaweiR4850Component::handle_elabel_(bool incomplete, uint16_t register_id,
   raw_elabel_response_ += std::string(data.cbegin(), data.cend());
 
   if (!incomplete) {
-    ESP_LOGI(TAG, "E-Label response received, populating sensors");
     ELabelResponse elabel_response = parse_elabel_response(raw_elabel_response_);
     raw_elabel_response_.clear();
 
@@ -401,6 +423,25 @@ void HuaweiR4850Component::handle_elabel_(bool incomplete, uint16_t register_id,
     }
 #endif // USE_TEXT_SENSOR
     has_received_elabel_response_ = true;
+  }
+}
+
+void HuaweiR4850Component::handle_info_(bool incomplete, uint16_t register_id, std::vector<uint8_t> &data) {
+  switch (register_id) {
+    case R48xx_INFO_CHARACTERISTIC_DATA:
+    {
+      uint16_t raw_value = (data[2] << 8) | data[3];
+      psu_nominal_current_ = (raw_value & 0x3FF) >> 1;
+      ESP_LOGV(TAG, "Nominal current: %f", psu_nominal_current_.value());
+      break;
+    }
+    
+    default:
+      break;
+  }
+
+  if (psu_nominal_current_.has_value() && !incomplete) {
+    has_received_info_response_ = true;
   }
 }
 
