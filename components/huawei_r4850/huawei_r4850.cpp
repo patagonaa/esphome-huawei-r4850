@@ -223,13 +223,13 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
     if (init_status_ == R4850InitStatus::Ready) {
       handle_status_update_(error_type, register_id, data);
     } else {
-      ESP_LOGD(TAG, "Received status update while not ready (probably old), discarding.");
+      ESP_LOGV(TAG, "Received status update while not ready (probably old), discarding.");
     }
   } else if (cmd == R48xx_CMD_CONTROL) {
     if (init_status_ == R4850InitStatus::Ready) {
       handle_control_update_(error_type, register_id, data);
     } else {
-      ESP_LOGD(TAG, "Received control update while not ready (probably old), discarding.");
+      ESP_LOGV(TAG, "Received control update while not ready (probably old), discarding.");
     }
   } else if (cmd == R48xx_CMD_ELABEL) {
     handle_elabel_(incomplete, register_id, data);
