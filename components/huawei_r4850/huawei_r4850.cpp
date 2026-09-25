@@ -370,17 +370,9 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
     std::vector<uint8_t> data(message.begin() + 2, message.end());
 
     if (cmd == R48xx_CMD_DATA || cmd == R48xx_CMD_REGISTER_GET) {
-      if (init_status_ == R4850InitStatus::Ready) {
-        handle_status_update_(error_type, register_id, data);
-      } else {
-        ESP_LOGV(TAG, "Received status update while not ready (probably old), discarding.");
-      }
+      handle_status_update_(error_type, register_id, data);
     } else if (cmd == R48xx_CMD_CONTROL) {
-      if (init_status_ == R4850InitStatus::Ready) {
-        handle_control_update_(error_type, register_id, data);
-      } else {
-        ESP_LOGV(TAG, "Received control update while not ready (probably old), discarding.");
-      }
+      handle_control_update_(error_type, register_id, data);
     } else if (cmd == R48xx_CMD_ELABEL) {
       handle_elabel_(incomplete, register_id, data);
     } else if (cmd == R48xx_CMD_INFO) {
@@ -417,6 +409,11 @@ void HuaweiR4850Component::handle_timeout_()
 
 void HuaweiR4850Component::handle_status_update_(uint8_t error_type, uint16_t register_id, std::vector<uint8_t> &data)
 {
+  if (init_status_ != R4850InitStatus::Ready) {
+    ESP_LOGV(TAG, "Received status update while not ready (probably old), discarding.");
+    return;
+  }
+
   if (error_type != 0) {
     ESP_LOGW(TAG, "Value %03x get error: %d", register_id, error_type);
     return;
@@ -537,6 +534,11 @@ void HuaweiR4850Component::handle_status_update_(uint8_t error_type, uint16_t re
 
 void HuaweiR4850Component::handle_control_update_(uint8_t error_type, uint16_t register_id, std::vector<uint8_t> &data)
 {
+  if (init_status_ != R4850InitStatus::Ready) {
+    ESP_LOGV(TAG, "Received control update while not ready (probably old), discarding.");
+    return;
+  }
+
   if (error_type == 0) {
     for (auto &input : this->registered_inputs_) {
       input->handle_update(register_id, data);
@@ -552,6 +554,11 @@ void HuaweiR4850Component::handle_control_update_(uint8_t error_type, uint16_t r
 
 void HuaweiR4850Component::handle_elabel_(bool incomplete, uint16_t register_id, std::vector<uint8_t> &data)
 {
+  if (init_status_ != R4850InitStatus::GetElabel) {
+    ESP_LOGV(TAG, "Received E-Label while not ready (probably old), discarding.");
+    return;
+  }
+
   // Compose the full response string until complete
   raw_elabel_response_ += std::string(data.cbegin(), data.cend());
 
@@ -584,6 +591,11 @@ void HuaweiR4850Component::handle_elabel_(bool incomplete, uint16_t register_id,
 }
 
 void HuaweiR4850Component::handle_info_(bool incomplete, uint16_t register_id, std::vector<uint8_t> &data) {
+  if (init_status_ != R4850InitStatus::GetInfo) {
+    ESP_LOGV(TAG, "Received info while not ready (probably old), discarding.");
+    return;
+  }
+
   switch (register_id) {
     case R48xx_INFO_CHARACTERISTIC_DATA:
     {
