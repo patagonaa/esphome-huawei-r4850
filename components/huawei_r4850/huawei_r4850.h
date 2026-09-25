@@ -70,6 +70,9 @@ class HuaweiR4850Component : public PollingComponent {
   void loop() override;
   void update() override;
 
+  const char *get_addr_log_str() {
+    return addr_log_str_;
+  }
   void set_value(uint16_t register_id, std::vector<uint8_t> &data);
 
 #ifdef USE_SENSOR
@@ -110,6 +113,7 @@ class HuaweiR4850Component : public PollingComponent {
   canbus::Canbus *canbus;
   esphome::optional<uint8_t> psu_addr_{};
   esphome::optional<uint16_t> psu_slot_id_{};
+  char addr_log_str_[16]{};
 
   uint32_t last_renegotiation_message_{0};
 
