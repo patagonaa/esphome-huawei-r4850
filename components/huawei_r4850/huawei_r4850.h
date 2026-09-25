@@ -93,6 +93,10 @@ class HuaweiR4850Component : public PollingComponent {
     this->psu_addr_ = value;
   }
 
+  void set_psu_slot_id(uint16_t value) {
+    this->psu_slot_id_ = value;
+  }
+
   esphome::optional<float> get_psu_nominal_current() {
     return psu_nominal_current_;
   }
@@ -102,7 +106,8 @@ class HuaweiR4850Component : public PollingComponent {
 
  protected:
   canbus::Canbus *canbus;
-  uint8_t psu_addr_;
+  esphome::optional<uint8_t> psu_addr_;
+  esphome::optional<uint16_t> psu_slot_id_;
 
   R4850InitStatus init_status_ = R4850InitStatus::Disconnected;
   uint32_t last_init_request_{0};
