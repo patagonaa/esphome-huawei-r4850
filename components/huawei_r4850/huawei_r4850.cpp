@@ -344,21 +344,25 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
   }
 
   // if we don't know the address, find the info message that includes the right slot id and save its address
-  if (init_status_ == R4850InitStatus::GetAddressBySlot) {
-    assert(psu_slot_id_.has_value());
-
-    if (proto != R48xx_PROTO_SMU || cmd != R48xx_CMD_INFO || src_controller) {
-      return;
-    }
-
+  if (psu_slot_id_.has_value() && proto == R48xx_PROTO_SMU && cmd == R48xx_CMD_INFO && !src_controller) {
     uint16_t register_id = ((message[0] & 0x0F) << 8) | message[1];
+
     if (register_id == R48xx_INFO_SLOT_ID) {
       uint16_t slot_id = (message[2] << 8) | message[3];
+
       if (slot_id == psu_slot_id_.value()) {
-        psu_addr_ = psu_addr;
+        if (init_status_ == R4850InitStatus::GetAddressBySlot) {
+          psu_addr_ = psu_addr;
+        }
+
+        if (psu_addr_.has_value() && psu_addr_.value() != psu_addr) {
+          ESP_LOGE(TAG,
+            "detected slot id conflict: address %" PRIu8 " and %" PRIu8 " both have slot id %04" PRIx16,
+            psu_addr_.value(), psu_addr, slot_id
+          );
+        }
       }
     }
-    return;
   }
 
   if (!this->psu_addr_.has_value() || psu_addr != this->psu_addr_.value() || src_controller) {
