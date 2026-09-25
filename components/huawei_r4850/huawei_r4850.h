@@ -27,8 +27,10 @@ class HuaweiR4850Input {
 };
 
 enum class R4850InitStatus {
-  Disconnected,
+  NegotiatingAddress,
   Init,
+  GetAddressBySlot,
+  WaitForUnsolicited,
   GetElabel,
   GetInfo,
   Ready,
@@ -106,10 +108,13 @@ class HuaweiR4850Component : public PollingComponent {
 
  protected:
   canbus::Canbus *canbus;
-  esphome::optional<uint8_t> psu_addr_;
-  esphome::optional<uint16_t> psu_slot_id_;
+  esphome::optional<uint8_t> psu_addr_{};
+  esphome::optional<uint16_t> psu_slot_id_{};
+  char addr_log_str_[16]{};
 
-  R4850InitStatus init_status_ = R4850InitStatus::Disconnected;
+  uint32_t last_renegotiation_message_{0};
+
+  R4850InitStatus init_status_ = R4850InitStatus::Init;
   uint32_t last_init_request_{0};
 
   bool needs_fan_status_{0};
@@ -152,6 +157,7 @@ class HuaweiR4850Component : public PollingComponent {
 
   std::vector<HuaweiR4850Input *> registered_inputs_{};
 
+  void set_init_status_(R4850InitStatus init_status);
   void on_frame(uint32_t can_id, bool extended_id, bool rtr, const std::vector<uint8_t> &message);
 
   void handle_timeout_();
