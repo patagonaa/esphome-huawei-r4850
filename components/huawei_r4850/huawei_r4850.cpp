@@ -19,8 +19,11 @@ static const char *const TAG = "huawei_r4850";
 static const uint8_t R48xx_PROTO_PSU = 0x20; // PSU to PSU
 static const uint8_t R48xx_PROTO_SMU = 0x21; // Controller to PSU (SMU = "Site Monitoring Unit")
 
+static const uint8_t R48xx_ADDR_BROADCAST = 0x00;
+
 // PROTO PSU
 static const uint8_t R48xx_CMD_UNSOLICITED = 0x11;
+static const uint8_t R48xx_CMD_ADDR_NEGOTIATION = 0x10;
 
 // PROTO SMU
 static const uint8_t R48xx_CMD_DATA = 0x40;
@@ -30,6 +33,7 @@ static const uint8_t R48xx_CMD_CONTROL = 0x80;
 static const uint8_t R48xx_CMD_REGISTER_GET = 0x82;
 
 static const uint16_t R48xx_INFO_CHARACTERISTIC_DATA = 0x001;
+static const uint16_t R48xx_INFO_SLOT_ID = 0x006;
 
 static const uint16_t R48xx_DATA_OPERATING_HOURS = 0x10E;
 static const uint16_t R48xx_DATA_INPUT_POWER = 0x170;
@@ -98,74 +102,186 @@ void HuaweiR4850Component::resend_inputs() {
   }
 }
 
-void HuaweiR4850Component::loop() {
-  // unsolicited messages should be received every ~377ms. Wait some extra time to make sure one was actually
-  // supposed to arrive and no other components delayed CAN receive enough to trigger this.
-  bool can_connected = last_unsolicited_message_ != 0 && (millis() - last_unsolicited_message_ < 1000);
-  if (!can_connected && init_status_ != R4850InitStatus::Disconnected) {
+void HuaweiR4850Component::set_init_status_(R4850InitStatus init_status) {
+  switch (init_status)
+  {
+  case R4850InitStatus::NegotiatingAddress:
+    init_status_ = init_status;
+    break;
+
+  case R4850InitStatus::Init:
+    init_status_ = init_status;
 #ifdef USE_BINARY_SENSOR
     this->publish_sensor_state_(canbus_connectivity_binary_sensor_, false);
 #endif // USE_BINARY_SENSOR
     handle_timeout_();
-    ESP_LOGW(TAG, "No unsolicited messages received lately, stopping polling");
-    init_status_ = R4850InitStatus::Disconnected;
-  } else if (can_connected && init_status_ == R4850InitStatus::Disconnected) {
+    last_unsolicited_message_ = 0;
+    break;
+  
+  case R4850InitStatus::GetAddressBySlot:
+    init_status_ = init_status;
+    psu_addr_.reset();
+    last_init_request_ = 0;
+    break;
+  case R4850InitStatus::WaitForUnsolicited:
+    init_status_ = init_status;
+    last_init_request_ = 0;
+    break;
+  case R4850InitStatus::GetElabel:
+    init_status_ = init_status;
+    has_received_elabel_response_ = false;
+    last_init_request_ = 0;
+    break;
+
+  case R4850InitStatus::GetInfo:
+    init_status_ = init_status;
+    has_received_info_response_ = false;
+    last_init_request_ = 0;
+    break;
+
+  case R4850InitStatus::Ready:
+    init_status_ = init_status;
 #ifdef USE_BINARY_SENSOR
     this->publish_sensor_state_(canbus_connectivity_binary_sensor_, true);
 #endif // USE_BINARY_SENSOR
-    ESP_LOGI(TAG, "Got unsolicited messages on CAN bus -> init");
-    init_status_ = R4850InitStatus::Init;
-  } else {
-    switch (init_status_) {
-      case R4850InitStatus::Init:
-        has_received_elabel_response_ = false;
-        has_received_info_response_ = false;
-        last_init_request_ = 0;
-        init_status_ = R4850InitStatus::GetElabel;
-        break;
-
-      case R4850InitStatus::GetElabel:
-      {
-        if (has_received_elabel_response_) {
-          ESP_LOGI(TAG, "Received E-label response -> getting PSU info");
-          init_status_ = R4850InitStatus::GetInfo;
-          last_init_request_ = 0;
-        } else if (last_init_request_ == 0 || millis() - last_init_request_ > 5000) {
-          ESP_LOGD(TAG, "Sending E-label request");
-          raw_elabel_response_.clear();
-
-          uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_.value(), R48xx_CMD_ELABEL, true, false);
-          std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
-          this->canbus->send_data(canId, true, data);
-          last_init_request_ = millis();
-        }
-        break;
-      }
-
-      case R4850InitStatus::GetInfo:
-      {
-        if (has_received_info_response_) {
-          ESP_LOGI(TAG, "Received PSU info response -> ready to poll");
-          init_status_ = R4850InitStatus::Ready;
-          for (auto &input : this->registered_inputs_) {
-            input->handle_connected();
-          }
-          last_init_request_ = 0;
-        } else if (last_init_request_ == 0 || millis() - last_init_request_ > 5000) {
-          ESP_LOGD(TAG, "Sending PSU info request");
-          psu_nominal_current_.reset();
-
-          uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_.value(), R48xx_CMD_INFO, true, false);
-          std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
-          this->canbus->send_data(canId, true, data);
-          last_init_request_ = millis();
-        }
-        break;
-      }
-      
-      default:
-        break;
+    for (auto &input : this->registered_inputs_) {
+      input->handle_connected();
     }
+    break;
+  
+  default:
+    break;
+  }
+}
+
+void HuaweiR4850Component::loop() {
+  uint32_t now = App.get_loop_component_start_time();
+
+  // unsolicited messages should be received every ~377ms. Wait some extra time to make sure one was actually
+  // supposed to arrive and no other components delayed CAN receive enough to trigger this.
+  bool recent_unsolicited = last_unsolicited_message_ != 0 && (now - last_unsolicited_message_ < 1000);
+
+  switch (init_status_) {
+    case R4850InitStatus::NegotiatingAddress:
+    {
+      if (now - last_renegotiation_message_ < 3000) {
+        // around 3 seconds after the last renegotiation message, the PSUs start acting normally again
+        ESP_LOGI(TAG, "Address (re-)negotiation seems complete -> init");
+        set_init_status_(R4850InitStatus::Init);
+      }
+      break;
+    }
+
+    case R4850InitStatus::Init:
+    {
+      if (psu_slot_id_.has_value()) {
+        ESP_LOGI(TAG, "Address unknown -> get address by slot id 0x%04" PRIx16, psu_slot_id_.value());
+        set_init_status_(R4850InitStatus::GetAddressBySlot);
+      } else {
+        ESP_LOGI(TAG, "Address known -> wait for unsolicited messages");
+        set_init_status_(R4850InitStatus::WaitForUnsolicited);
+      }
+      break;
+    }
+
+    case R4850InitStatus::GetAddressBySlot:
+    {
+      static const uint32_t broadcast_response_timeout = 5000;
+
+      if (psu_addr_.has_value()) {
+        ESP_LOGI(TAG, "Received address by slot id -> wait for unsolicited messages");
+        set_init_status_(R4850InitStatus::WaitForUnsolicited);
+      } else if (last_init_request_ == 0) {
+        // HACK: ideally we would only send _one_ broadcast for all PSU instances to avoid a flood of responses,
+        // but since we have no way to coordinate this, set last_init_request_ random so the requests are spread
+        // over time and if we're not very unlucky, the response to the first request answers all other instances
+        // before they had a chance to send.
+        last_init_request_ = now + broadcast_response_timeout - (esphome::random_uint32() % 1000);
+      } else if (now - last_init_request_ > broadcast_response_timeout) {
+        ESP_LOGD(TAG, "Sending broadcast PSU info request");
+        uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, R48xx_ADDR_BROADCAST, R48xx_CMD_INFO, true, false);
+        std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
+        this->canbus->send_data(canId, true, data);
+        last_init_request_ = now;
+      }
+      break;
+    }
+
+    case R4850InitStatus::WaitForUnsolicited:
+    {
+      if (recent_unsolicited) {
+        ESP_LOGI(TAG, "Got unsolicited messages on CAN bus -> getting E-Label");
+        set_init_status_(R4850InitStatus::GetElabel);
+      } else if (psu_slot_id_.has_value()){
+        // timeout here to avoid getting stuck in this state if our PSU changed address
+        // but we missed the renegotiation for some reason
+        if (last_init_request_ == 0) {
+          last_init_request_ = now;
+        } else if (now - last_init_request_ > 5000) {
+          ESP_LOGW(TAG, "No unsolicited messages received lately -> init");
+        }
+      }
+      break;
+    }
+
+    case R4850InitStatus::GetElabel:
+    {
+      if (!recent_unsolicited) {
+        ESP_LOGW(TAG, "No unsolicited messages received lately -> init");
+        set_init_status_(R4850InitStatus::Init);
+        break;
+      }
+
+      if (has_received_elabel_response_) {
+        ESP_LOGI(TAG, "Received E-label response -> getting PSU info");
+        set_init_status_(R4850InitStatus::GetInfo);
+      } else if (last_init_request_ == 0 || now - last_init_request_ > 5000) {
+        ESP_LOGD(TAG, "Sending E-label request");
+        raw_elabel_response_.clear();
+
+        uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_.value(), R48xx_CMD_ELABEL, true, false);
+        std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
+        this->canbus->send_data(canId, true, data);
+        last_init_request_ = now;
+      }
+      break;
+    }
+
+    case R4850InitStatus::GetInfo:
+    {
+      if (!recent_unsolicited) {
+        ESP_LOGW(TAG, "No unsolicited messages received lately -> init");
+        set_init_status_(R4850InitStatus::Init);
+        break;
+      }
+
+      if (has_received_info_response_) {
+        ESP_LOGI(TAG, "Received PSU info response -> ready to poll");
+        set_init_status_(R4850InitStatus::Ready);
+      } else if (last_init_request_ == 0 || now - last_init_request_ > 5000) {
+        ESP_LOGD(TAG, "Sending PSU info request");
+        psu_nominal_current_.reset();
+
+        uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_.value(), R48xx_CMD_INFO, true, false);
+        std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
+        this->canbus->send_data(canId, true, data);
+        last_init_request_ = now;
+      }
+      break;
+    }
+    
+    case R4850InitStatus::Ready:
+    {
+      if (!recent_unsolicited) {
+        ESP_LOGW(TAG, "No unsolicited messages received lately -> init");
+        set_init_status_(R4850InitStatus::Init);
+        break;
+      }
+      break;
+    }
+
+    default:
+      break;
   }
 }
 
@@ -216,33 +332,64 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
   bool src_controller, incomplete;
   this->canid_unpack_(can_id, &proto, &psu_addr, &cmd, &src_controller, &incomplete);
 
+  // if this is an address (re)negotiation message, set the state to negotiating and skip everything else
+  // because we can't be sure the address is right
+  if (proto == R48xx_PROTO_PSU && cmd == R48xx_CMD_ADDR_NEGOTIATION && !src_controller) {
+    if (init_status_ != R4850InitStatus::NegotiatingAddress) {
+      set_init_status_(R4850InitStatus::NegotiatingAddress);
+      ESP_LOGI(TAG, "address (re-)negotiation started -> wait for addresses to be negotiated");
+    }
+    last_renegotiation_message_ = millis();
+    return;
+  }
+
+  // if we don't know the address, find the info message that includes the right slot id and save its address
+  if (init_status_ == R4850InitStatus::GetAddressBySlot) {
+    assert(psu_slot_id_.has_value());
+
+    if (proto != R48xx_PROTO_SMU || cmd != R48xx_CMD_INFO || src_controller) {
+      return;
+    }
+
+    uint16_t register_id = ((message[0] & 0x0F) << 8) | message[1];
+    if (register_id == R48xx_INFO_SLOT_ID) {
+      uint16_t slot_id = (message[2] << 8) | message[3];
+      if (slot_id == psu_slot_id_.value()) {
+        psu_addr_ = psu_addr;
+      }
+    }
+    return;
+  }
+
   if (!this->psu_addr_.has_value() || psu_addr != this->psu_addr_.value() || src_controller) {
     // not from our PSU -> skip
     return;
   }
 
-  uint8_t error_type = (message[0] & 0xF0) >> 4;
-  uint16_t register_id = ((message[0] & 0x0F) << 8) | message[1];
-  std::vector<uint8_t> data(message.begin() + 2, message.end());
-
-  if (cmd == R48xx_CMD_DATA || cmd == R48xx_CMD_REGISTER_GET) {
-    if (init_status_ == R4850InitStatus::Ready) {
-      handle_status_update_(error_type, register_id, data);
-    } else {
-      ESP_LOGV(TAG, "Received status update while not ready (probably old), discarding.");
-    }
-  } else if (cmd == R48xx_CMD_CONTROL) {
-    if (init_status_ == R4850InitStatus::Ready) {
-      handle_control_update_(error_type, register_id, data);
-    } else {
-      ESP_LOGV(TAG, "Received control update while not ready (probably old), discarding.");
-    }
-  } else if (cmd == R48xx_CMD_ELABEL) {
-    handle_elabel_(incomplete, register_id, data);
-  } else if (cmd == R48xx_CMD_INFO) {
-    handle_info_(incomplete, register_id, data);
-  } else if (cmd == R48xx_CMD_UNSOLICITED) {
+  if (cmd == R48xx_CMD_UNSOLICITED) {
     last_unsolicited_message_ = millis();
+  } else {
+    uint8_t error_type = (message[0] & 0xF0) >> 4;
+    uint16_t register_id = ((message[0] & 0x0F) << 8) | message[1];
+    std::vector<uint8_t> data(message.begin() + 2, message.end());
+
+    if (cmd == R48xx_CMD_DATA || cmd == R48xx_CMD_REGISTER_GET) {
+      if (init_status_ == R4850InitStatus::Ready) {
+        handle_status_update_(error_type, register_id, data);
+      } else {
+        ESP_LOGV(TAG, "Received status update while not ready (probably old), discarding.");
+      }
+    } else if (cmd == R48xx_CMD_CONTROL) {
+      if (init_status_ == R4850InitStatus::Ready) {
+        handle_control_update_(error_type, register_id, data);
+      } else {
+        ESP_LOGV(TAG, "Received control update while not ready (probably old), discarding.");
+      }
+    } else if (cmd == R48xx_CMD_ELABEL) {
+      handle_elabel_(incomplete, register_id, data);
+    } else if (cmd == R48xx_CMD_INFO) {
+      handle_info_(incomplete, register_id, data);
+    }
   }
 }
 
