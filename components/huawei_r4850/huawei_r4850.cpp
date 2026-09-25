@@ -19,12 +19,15 @@ static const char *const TAG = "huawei_r4850";
 static const uint8_t R48xx_PROTO_PSU = 0x20; // PSU to PSU
 static const uint8_t R48xx_PROTO_SMU = 0x21; // Controller to PSU (SMU = "Site Monitoring Unit")
 
+// PROTO PSU
+static const uint8_t R48xx_CMD_UNSOLICITED = 0x11;
+
+// PROTO SMU
 static const uint8_t R48xx_CMD_DATA = 0x40;
 static const uint8_t R48xx_CMD_INFO = 0x50;
 static const uint8_t R48xx_CMD_ELABEL = 0xD2;
 static const uint8_t R48xx_CMD_CONTROL = 0x80;
 static const uint8_t R48xx_CMD_REGISTER_GET = 0x82;
-static const uint8_t R48xx_CMD_UNSOLICITED = 0x11;
 
 static const uint16_t R48xx_INFO_CHARACTERISTIC_DATA = 0x001;
 
@@ -131,7 +134,7 @@ void HuaweiR4850Component::loop() {
           ESP_LOGD(TAG, "Sending E-label request");
           raw_elabel_response_.clear();
 
-          uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_, R48xx_CMD_ELABEL, true, false);
+          uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_.value(), R48xx_CMD_ELABEL, true, false);
           std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
           this->canbus->send_data(canId, true, data);
           last_init_request_ = millis();
@@ -152,7 +155,7 @@ void HuaweiR4850Component::loop() {
           ESP_LOGD(TAG, "Sending PSU info request");
           psu_nominal_current_.reset();
 
-          uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_, R48xx_CMD_INFO, true, false);
+          uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_.value(), R48xx_CMD_INFO, true, false);
           std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
           this->canbus->send_data(canId, true, data);
           last_init_request_ = millis();
@@ -170,13 +173,13 @@ void HuaweiR4850Component::update() {
   if (init_status_ == R4850InitStatus::Ready) {
     ESP_LOGD(TAG, "Sending data request message");
     {
-      uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_, R48xx_CMD_DATA, true, false);
+      uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_.value(), R48xx_CMD_DATA, true, false);
       std::vector<uint8_t> data = {0, 0, 0, 0, 0, 0, 0, 0};
       this->canbus->send_data(canId, true, data);
     }
 
     if (this->needs_fan_status_) {
-      uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_, R48xx_CMD_REGISTER_GET, true, false);
+      uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_.value(), R48xx_CMD_REGISTER_GET, true, false);
       std::vector<uint8_t> data = {
         (uint8_t)((R48xx_DATA_FAN_STATUS & 0xF00) >> 8), (uint8_t)(R48xx_DATA_FAN_STATUS & 0x0FF), 0, 0, 0, 0, 0, 0
       };
@@ -196,7 +199,7 @@ void HuaweiR4850Component::set_value(uint16_t register_id, std::vector<uint8_t> 
     return;
   }
 
-  uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_, R48xx_CMD_CONTROL, true, false);
+  uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_.value(), R48xx_CMD_CONTROL, true, false);
 
   std::vector<uint8_t> message = {(uint8_t)((register_id & 0xF00) >> 8), (uint8_t)(register_id & 0x0FF)};
   message.insert(message.end(), data.begin(), data.end());
@@ -213,7 +216,7 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
   bool src_controller, incomplete;
   this->canid_unpack_(can_id, &proto, &psu_addr, &cmd, &src_controller, &incomplete);
 
-  if (psu_addr != this->psu_addr_ || proto != R48xx_PROTO_SMU || src_controller) {
+  if (!this->psu_addr_.has_value() || psu_addr != this->psu_addr_.value() || src_controller) {
     // not from our PSU -> skip
     return;
   }
