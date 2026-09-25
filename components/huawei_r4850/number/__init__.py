@@ -47,9 +47,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                 cv.Optional(CONF_MIN_VALUE, default=41.0): cv.float_,
                 cv.Optional(CONF_MAX_VALUE, default=58.6): cv.float_,
                 cv.Optional(CONF_STEP, default=0.1): cv.float_,
-                cv.Optional(CONF_MODE, default="BOX"): cv.enum(
-                    number.NUMBER_MODES, upper=True
-                ),
+                cv.Optional(CONF_MODE, default="BOX"): cv.enum(number.NUMBER_MODES, upper=True),
                 cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
                 cv.Optional(CONF_RESEND, default=True): cv.boolean,
             }
@@ -64,9 +62,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                 cv.Optional(CONF_MIN_VALUE, default=48.0): cv.float_,
                 cv.Optional(CONF_MAX_VALUE, default=58.4): cv.float_,
                 cv.Optional(CONF_STEP, default=0.1): cv.float_,
-                cv.Optional(CONF_MODE, default="BOX"): cv.enum(
-                    number.NUMBER_MODES, upper=True
-                ),
+                cv.Optional(CONF_MODE, default="BOX"): cv.enum(number.NUMBER_MODES, upper=True),
                 cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
                 cv.Optional(CONF_RESEND, default=False): cv.boolean,
             }
@@ -82,9 +78,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                 cv.Optional(CONF_MIN_VALUE, default=0.0): cv.float_,
                 cv.Optional(CONF_MAX_VALUE, default=63.3): cv.float_,
                 cv.Optional(CONF_STEP, default=0.1): cv.float_,
-                cv.Optional(CONF_MODE, default="BOX"): cv.enum(
-                    number.NUMBER_MODES, upper=True
-                ),
+                cv.Optional(CONF_MODE, default="BOX"): cv.enum(number.NUMBER_MODES, upper=True),
                 cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
                 cv.Optional(CONF_RESEND, default=True): cv.boolean,
             }
@@ -100,9 +94,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                 cv.Optional(CONF_MIN_VALUE, default=0.0): cv.float_,
                 cv.Optional(CONF_MAX_VALUE, default=63.3): cv.float_,
                 cv.Optional(CONF_STEP, default=0.1): cv.float_,
-                cv.Optional(CONF_MODE, default="BOX"): cv.enum(
-                    number.NUMBER_MODES, upper=True
-                ),
+                cv.Optional(CONF_MODE, default="BOX"): cv.enum(number.NUMBER_MODES, upper=True),
                 cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
                 cv.Optional(CONF_RESEND, default=False): cv.boolean,
             }
@@ -118,9 +110,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
                 cv.Optional(CONF_MIN_VALUE, default=0): cv.float_,
                 cv.Optional(CONF_MAX_VALUE, default=20): cv.float_,
                 cv.Optional(CONF_STEP, default=0.1): cv.float_,
-                cv.Optional(CONF_MODE, default="BOX"): cv.enum(
-                    number.NUMBER_MODES, upper=True
-                ),
+                cv.Optional(CONF_MODE, default="BOX"): cv.enum(number.NUMBER_MODES, upper=True),
                 cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
                 cv.Optional(CONF_RESEND, default=False): cv.boolean,
             }
@@ -133,13 +123,9 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
         ).extend(
             {
                 cv.Optional(CONF_MIN_VALUE, default=0): cv.float_range(min=0, max=100),
-                cv.Optional(CONF_MAX_VALUE, default=100): cv.float_range(
-                    min=0, max=100
-                ),
+                cv.Optional(CONF_MAX_VALUE, default=100): cv.float_range(min=0, max=100),
                 cv.Optional(CONF_STEP, default=1): cv.float_,
-                cv.Optional(CONF_MODE, default="SLIDER"): cv.enum(
-                    number.NUMBER_MODES, upper=True
-                ),
+                cv.Optional(CONF_MODE, default="SLIDER"): cv.enum(number.NUMBER_MODES, upper=True),
                 cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
                 cv.Optional(CONF_RESEND, default=True): cv.boolean,
             }
