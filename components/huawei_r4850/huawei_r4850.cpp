@@ -190,6 +190,7 @@ void HuaweiR4850Component::set_value(uint16_t register_id, std::vector<uint8_t> 
 
   if (init_status_ != R4850InitStatus::Ready) {
     ESP_LOGW(TAG, "Value %03x set error: not connected", register_id);
+    return;
   }
 
   uint32_t canId = this->canid_pack_(this->psu_addr_, R48xx_CMD_CONTROL, true, false);
