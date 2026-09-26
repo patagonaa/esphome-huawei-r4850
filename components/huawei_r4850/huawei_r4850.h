@@ -168,6 +168,7 @@ class HuaweiR4850Component : public PollingComponent {
   void handle_control_update_(uint8_t error_type, uint16_t register_id, std::vector<uint8_t> &data);
   void handle_elabel_(bool incomplete, uint16_t register_id, std::vector<uint8_t> &data);
   void handle_info_(bool incomplete, uint16_t register_id, std::vector<uint8_t> &data);
+  void handle_info_for_slot_id_(uint8_t psu_addr, const std::vector<uint8_t> &message);
 
   uint32_t canid_pack_(uint8_t proto, uint8_t addr, uint8_t command, bool src_controller, bool incomplete);
   void canid_unpack_(uint32_t canId, uint8_t *proto, uint8_t *addr, uint8_t *command, bool *src_controller, bool *incomplete);

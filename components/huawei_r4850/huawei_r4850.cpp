@@ -353,26 +353,8 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
     return;
   }
 
-  // if we don't know the address, find the info message that includes the right slot id and save its address
   if (psu_slot_id_.has_value() && proto == R48xx_PROTO_SMU && cmd == R48xx_CMD_INFO && !src_controller) {
-    uint16_t register_id = ((message[0] & 0x0F) << 8) | message[1];
-
-    if (register_id == R48xx_INFO_SLOT_ID) {
-      uint16_t slot_id = (message[2] << 8) | message[3];
-
-      if (slot_id == psu_slot_id_.value()) {
-        if (init_status_ == R4850InitStatus::GetAddressBySlot) {
-          psu_addr_ = psu_addr;
-        }
-
-        if (psu_addr_.has_value() && psu_addr_.value() != psu_addr) {
-          ESP_LOGE(TAG,
-            "%s detected slot id conflict: address %" PRIu8 " and %" PRIu8 " both have slot id %04" PRIx16,
-            get_addr_log_str(), psu_addr_.value(), psu_addr, slot_id
-          );
-        }
-      }
-    }
+    handle_info_for_slot_id_(psu_addr, message);
   }
 
   if (!this->psu_addr_.has_value() || psu_addr != this->psu_addr_.value() || src_controller) {
@@ -630,6 +612,34 @@ void HuaweiR4850Component::handle_info_(bool incomplete, uint16_t register_id, s
 
   if (psu_nominal_current_.has_value() && !incomplete) {
     has_received_info_response_ = true;
+  }
+}
+
+void HuaweiR4850Component::handle_info_for_slot_id_(uint8_t psu_addr, const std::vector<uint8_t> &message)
+{
+  // find the info message that includes our slot id to get its address
+  uint16_t register_id = ((message[0] & 0x0F) << 8) | message[1];
+
+  if (register_id == R48xx_INFO_SLOT_ID) {
+    uint16_t slot_id = (message[2] << 8) | message[3];
+    ESP_LOGV(TAG, "%s found PSU with slot id %04" PRIx16 " address %" PRIu8, get_addr_log_str(), slot_id, psu_addr);
+
+    if (slot_id == psu_slot_id_.value()) {
+      // if we're currently looking for our address: set it
+      // (loop() is responsible to advance the init_status to the next state)
+      if (init_status_ == R4850InitStatus::GetAddressBySlot) {
+        psu_addr_ = psu_addr;
+      }
+
+      // once it's set, keep looking for more responses with the same
+      // slot id but different address to detect conflicts
+      if (psu_addr_.has_value() && psu_addr_.value() != psu_addr) {
+        ESP_LOGE(TAG,
+          "%s detected slot id conflict: address %" PRIu8 " and %" PRIu8 " both have slot id %04" PRIx16,
+          get_addr_log_str(), psu_addr_.value(), psu_addr, slot_id
+        );
+      }
+    }
   }
 }
 
