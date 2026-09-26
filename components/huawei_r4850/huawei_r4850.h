@@ -27,8 +27,10 @@ class HuaweiR4850Input {
 };
 
 enum class R4850InitStatus {
-  Disconnected,
+  NegotiatingAddress,
   Init,
+  GetAddressBySlot,
+  WaitForUnsolicited,
   GetElabel,
   GetInfo,
   Ready,
@@ -68,6 +70,9 @@ class HuaweiR4850Component : public PollingComponent {
   void loop() override;
   void update() override;
 
+  const char *get_addr_log_str() {
+    return addr_log_str_;
+  }
   void set_value(uint16_t register_id, std::vector<uint8_t> &data);
 
 #ifdef USE_SENSOR
@@ -93,6 +98,10 @@ class HuaweiR4850Component : public PollingComponent {
     this->psu_addr_ = value;
   }
 
+  void set_psu_slot_id(uint16_t value) {
+    this->psu_slot_id_ = value;
+  }
+
   esphome::optional<float> get_psu_nominal_current() {
     return psu_nominal_current_;
   }
@@ -102,9 +111,13 @@ class HuaweiR4850Component : public PollingComponent {
 
  protected:
   canbus::Canbus *canbus;
-  uint8_t psu_addr_;
+  esphome::optional<uint8_t> psu_addr_{};
+  esphome::optional<uint16_t> psu_slot_id_{};
+  char addr_log_str_[16]{};
 
-  R4850InitStatus init_status_ = R4850InitStatus::Disconnected;
+  uint32_t last_renegotiation_message_{0};
+
+  R4850InitStatus init_status_ = R4850InitStatus::Init;
   uint32_t last_init_request_{0};
 
   bool needs_fan_status_{0};
@@ -147,6 +160,7 @@ class HuaweiR4850Component : public PollingComponent {
 
   std::vector<HuaweiR4850Input *> registered_inputs_{};
 
+  void set_init_status_(R4850InitStatus init_status);
   void on_frame(uint32_t can_id, bool extended_id, bool rtr, const std::vector<uint8_t> &message);
 
   void handle_timeout_();
@@ -154,9 +168,10 @@ class HuaweiR4850Component : public PollingComponent {
   void handle_control_update_(uint8_t error_type, uint16_t register_id, std::vector<uint8_t> &data);
   void handle_elabel_(bool incomplete, uint16_t register_id, std::vector<uint8_t> &data);
   void handle_info_(bool incomplete, uint16_t register_id, std::vector<uint8_t> &data);
+  void handle_info_for_slot_id_(uint8_t psu_addr, const std::vector<uint8_t> &message);
 
-  uint32_t canid_pack_(uint8_t addr, uint8_t command, bool src_controller, bool incomplete);
-  void canid_unpack_(uint32_t canId, uint8_t *addr, uint8_t *command, bool *src_controller, bool *incomplete);
+  uint32_t canid_pack_(uint8_t proto, uint8_t addr, uint8_t command, bool src_controller, bool incomplete);
+  void canid_unpack_(uint32_t canId, uint8_t *proto, uint8_t *addr, uint8_t *command, bool *src_controller, bool *incomplete);
 };
 
 }  // namespace huawei_r4850

@@ -40,8 +40,27 @@ huawei_r4850:
 - **canbus_id**: ID of the [CAN Bus component](https://esphome.io/components/canbus/) the PSU is attached to
 - **update_interval** ([Time](https://esphome.io/guides/configuration-types#config-time), Default `5s`): Update interval for sensors
 - **resend_interval** ([Time](https://esphome.io/guides/configuration-types#config-time), Default `5s`): Interval for numbers and switches with `resend: true` to resend their state (see [Resend](#resend))
-- **psu_address** (int, Required): Address of the PSU (1 = first PSU, 2 = second, ...)
+- **psu_address** (int, Optional): Address of the PSU (1 = first PSU, 2 = second, ...), see [PSU addressing](#psu-addressing)
+- **slot_id** (uint16, Optional): The slot ID of this PSU, see [PSU addressing](#psu-addressing)
 
+#### PSU addressing
+PSUs can either be addressed by their auto-negotiated address (`psu_address`) or by their slot ID (`slot_id`).
+
+When using a single PSU, `psu_address: 1` is always safe to use.
+
+When using multiple PSUs on a single bus with `psu_address`, PSUs can change their addresses if another one joins the bus.
+
+If is this is an issue (for example when PSUs are on different phases or are used to charge different batteries, etc.),
+PSUs can instead be addressed by their `slot_id`.
+The slot id depends on how the slot detect pins are wired up:
+| bottom slot detect pin  | top slot detect pin | slot_id value |
+|-------------------------|---------------------|---------------|
+| pulled to ground        | pulled to ground    | 0x0101        |
+| 6.3k resistor to ground | pulled to ground    | 0x0201        |
+| 10k resistor to ground  | pulled to ground    | 0x0301        |
+| 10k resistor to ground  | pulled to 0.5V      | 0x0302        |
+
+For the full list of possible slot detect values, see [patagonaa/huawei-r48xx#slot-id](https://github.com/patagonaa/huawei-r48xx#slot-id)
 
 ### Sensors
 
