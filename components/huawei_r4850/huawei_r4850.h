@@ -120,6 +120,8 @@ class HuaweiR4850Component : public PollingComponent {
   R4850InitStatus init_status_ = R4850InitStatus::Init;
   uint32_t last_init_request_{0};
 
+  bool psu_connected_{false};
+
   bool needs_fan_status_{0};
 
   uint32_t last_unsolicited_message_{0};
@@ -163,7 +165,7 @@ class HuaweiR4850Component : public PollingComponent {
   void set_init_status_(R4850InitStatus init_status);
   void on_frame(uint32_t can_id, bool extended_id, bool rtr, const std::vector<uint8_t> &message);
 
-  void handle_timeout_();
+  void handle_psu_connectivity_(bool connected);
   void handle_status_update_(uint8_t error_type, uint16_t register_id, std::vector<uint8_t> &data);
   void handle_control_update_(uint8_t error_type, uint16_t register_id, std::vector<uint8_t> &data);
   void handle_elabel_(bool incomplete, uint16_t register_id, std::vector<uint8_t> &data);

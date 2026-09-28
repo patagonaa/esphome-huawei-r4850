@@ -115,15 +115,13 @@ void HuaweiR4850Component::set_init_status_(R4850InitStatus init_status) {
   {
   case R4850InitStatus::NegotiatingAddress:
     this->init_status_ = init_status;
+    this->handle_psu_connectivity_(false);
     break;
 
   case R4850InitStatus::Init:
     this->init_status_ = init_status;
-#ifdef USE_BINARY_SENSOR
-    this->publish_sensor_state_(this->canbus_connectivity_binary_sensor_, false);
-#endif // USE_BINARY_SENSOR
-    this->handle_timeout_();
     this->last_unsolicited_message_ = 0;
+    this->handle_psu_connectivity_(false);
     break;
   
   case R4850InitStatus::GetAddressBySlot:
@@ -149,12 +147,7 @@ void HuaweiR4850Component::set_init_status_(R4850InitStatus init_status) {
 
   case R4850InitStatus::Ready:
     this->init_status_ = init_status;
-#ifdef USE_BINARY_SENSOR
-    this->publish_sensor_state_(this->canbus_connectivity_binary_sensor_, true);
-#endif // USE_BINARY_SENSOR
-    for (auto &input : this->registered_inputs_) {
-      input->handle_connected();
-    }
+    this->handle_psu_connectivity_(true);
     break;
   
   default:
@@ -381,29 +374,45 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
   }
 }
 
-void HuaweiR4850Component::handle_timeout_()
+void HuaweiR4850Component::handle_psu_connectivity_(bool connected)
 {
-  // canbus disconnected -> set sensors to NAN
+  if (connected != this->psu_connected_) {
+    this->psu_connected_ = connected;
+
+    if (connected) {
+#ifdef USE_BINARY_SENSOR
+      this->publish_sensor_state_(this->canbus_connectivity_binary_sensor_, true);
+#endif // USE_BINARY_SENSOR
+      for (auto &input : this->registered_inputs_) {
+        input->handle_connected();
+      }
+    } else {
+#ifdef USE_BINARY_SENSOR
+      this->publish_sensor_state_(this->canbus_connectivity_binary_sensor_, false);
+#endif // USE_BINARY_SENSOR
+
 #ifdef USE_SENSOR
-  this->publish_sensor_state_(this->operating_hours_sensor_, NAN);
-  this->publish_sensor_state_(this->input_voltage_sensor_, NAN);
-  this->publish_sensor_state_(this->input_frequency_sensor_, NAN);
-  this->publish_sensor_state_(this->input_current_sensor_, NAN);
-  this->publish_sensor_state_(this->input_power_sensor_, NAN);
-  this->publish_sensor_state_(this->input_temp_sensor_, NAN);
-  this->publish_sensor_state_(this->efficiency_sensor_, NAN);
-  this->publish_sensor_state_(this->output_voltage_sensor_, NAN);
-  this->publish_sensor_state_(this->output_current_sensor_, NAN);
-  this->publish_sensor_state_(this->output_current_setpoint_sensor_, NAN);
-  this->publish_sensor_state_(this->output_power_sensor_, NAN);
-  this->publish_sensor_state_(this->output_temp_sensor_, NAN);
-  this->publish_sensor_state_(this->fan_duty_cycle_min_sensor_, NAN);
-  this->publish_sensor_state_(this->fan_duty_cycle_target_sensor_, NAN);
-  this->publish_sensor_state_(this->fan_rpm_sensor_, NAN);
+      this->publish_sensor_state_(this->operating_hours_sensor_, NAN);
+      this->publish_sensor_state_(this->input_voltage_sensor_, NAN);
+      this->publish_sensor_state_(this->input_frequency_sensor_, NAN);
+      this->publish_sensor_state_(this->input_current_sensor_, NAN);
+      this->publish_sensor_state_(this->input_power_sensor_, NAN);
+      this->publish_sensor_state_(this->input_temp_sensor_, NAN);
+      this->publish_sensor_state_(this->efficiency_sensor_, NAN);
+      this->publish_sensor_state_(this->output_voltage_sensor_, NAN);
+      this->publish_sensor_state_(this->output_current_sensor_, NAN);
+      this->publish_sensor_state_(this->output_current_setpoint_sensor_, NAN);
+      this->publish_sensor_state_(this->output_power_sensor_, NAN);
+      this->publish_sensor_state_(this->output_temp_sensor_, NAN);
+      this->publish_sensor_state_(this->fan_duty_cycle_min_sensor_, NAN);
+      this->publish_sensor_state_(this->fan_duty_cycle_target_sensor_, NAN);
+      this->publish_sensor_state_(this->fan_rpm_sensor_, NAN);
 #endif // USE_SENSOR
 
-  for (auto &input : this->registered_inputs_) {
-    input->handle_timeout();
+      for (auto &input : this->registered_inputs_) {
+        input->handle_timeout();
+      }
+    }
   }
 }
 
