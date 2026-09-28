@@ -172,7 +172,7 @@ void HuaweiR4850Component::loop() {
   switch (this->init_status_) {
     case R4850InitStatus::NegotiatingAddress:
     {
-      if ((now - this->last_renegotiation_message_) < 3000) {
+      if ((now - this->last_renegotiation_message_) > 3000) {
         // around 3 seconds after the last renegotiation message, the PSUs start acting normally again
         ESP_LOGI(TAG, "%s Address (re-)negotiation seems complete -> init", this->get_addr_log_str());
         this->set_init_status_(R4850InitStatus::Init);
@@ -206,7 +206,7 @@ void HuaweiR4850Component::loop() {
         // but since we have no way to coordinate this, set last_init_request_ random so the requests are spread
         // over time and if we're not very unlucky, the response to the first request answers all other instances
         // before they had a chance to send.
-        this->last_init_request_ = now + broadcast_response_timeout - (esphome::random_uint32() % 1000);
+        this->last_init_request_ = now - broadcast_response_timeout + (esphome::random_uint32() % 1000);
       } else if ((now - this->last_init_request_) > broadcast_response_timeout) {
         ESP_LOGD(TAG, "%s Sending broadcast PSU info request", this->get_addr_log_str());
         uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, R48xx_ADDR_BROADCAST, R48xx_CMD_INFO, true, false);
