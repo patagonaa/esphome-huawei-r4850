@@ -31,6 +31,15 @@ CONF_MAX_OUTPUT_CURRENT_DEFAULT = "max_output_current_default"
 CONF_MAX_AC_CURRENT = "max_ac_current"
 CONF_FAN_DUTY_CYCLE = "fan_duty_cycle"
 
+REGISTER_IDS = {
+    CONF_OUTPUT_VOLTAGE: 0x100,
+    CONF_OUTPUT_VOLTAGE_DEFAULT: 0x101,
+    CONF_MAX_OUTPUT_CURRENT: 0x103,
+    CONF_MAX_OUTPUT_CURRENT_DEFAULT: 0x104,
+    CONF_MAX_AC_CURRENT: 0x109,
+    CONF_FAN_DUTY_CYCLE: 0x114,
+}
+
 HuaweiR4850Number = huawei_r4850_ns.class_(
     "HuaweiR4850Number", number.Number, cg.Component
 )
@@ -136,98 +145,20 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
 
 async def to_code(config: ConfigType) -> None:
     hub = await cg.get_variable(config[CONF_HUAWEI_R4850_ID])
-    if CONF_OUTPUT_VOLTAGE in config:
-        conf = config[CONF_OUTPUT_VOLTAGE]
-        var = cg.new_Pvariable(conf[CONF_ID])
-        await cg.register_component(var, conf)
-        await number.register_number(
-            var,
-            conf,
-            min_value=conf[CONF_MIN_VALUE],
-            max_value=conf[CONF_MAX_VALUE],
-            step=conf[CONF_STEP],
-        )
-        cg.add(getattr(hub, "register_input")(var))
-        cg.add(var.set_parent(hub, 0x100))
-        cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
-        cg.add(var.set_resend(conf[CONF_RESEND]))
 
-    if CONF_OUTPUT_VOLTAGE_DEFAULT in config:
-        conf = config[CONF_OUTPUT_VOLTAGE_DEFAULT]
-        var = cg.new_Pvariable(conf[CONF_ID])
-        await cg.register_component(var, conf)
-        await number.register_number(
-            var,
-            conf,
-            min_value=conf[CONF_MIN_VALUE],
-            max_value=conf[CONF_MAX_VALUE],
-            step=conf[CONF_STEP],
-        )
-        cg.add(getattr(hub, "register_input")(var))
-        cg.add(var.set_parent(hub, 0x101))
-        cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
-        cg.add(var.set_resend(conf[CONF_RESEND]))
-
-    if CONF_MAX_OUTPUT_CURRENT in config:
-        conf = config[CONF_MAX_OUTPUT_CURRENT]
-        var = cg.new_Pvariable(conf[CONF_ID])
-        await cg.register_component(var, conf)
-        await number.register_number(
-            var,
-            conf,
-            min_value=conf[CONF_MIN_VALUE],
-            max_value=conf[CONF_MAX_VALUE],
-            step=conf[CONF_STEP],
-        )
-        cg.add(getattr(hub, "register_input")(var))
-        cg.add(var.set_parent(hub, 0x103))
-        cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
-        cg.add(var.set_resend(conf[CONF_RESEND]))
-
-    if CONF_MAX_OUTPUT_CURRENT_DEFAULT in config:
-        conf = config[CONF_MAX_OUTPUT_CURRENT_DEFAULT]
-        var = cg.new_Pvariable(conf[CONF_ID])
-        await cg.register_component(var, conf)
-        await number.register_number(
-            var,
-            conf,
-            min_value=conf[CONF_MIN_VALUE],
-            max_value=conf[CONF_MAX_VALUE],
-            step=conf[CONF_STEP],
-        )
-        cg.add(getattr(hub, "register_input")(var))
-        cg.add(var.set_parent(hub, 0x104))
-        cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
-        cg.add(var.set_resend(conf[CONF_RESEND]))
-
-    if CONF_MAX_AC_CURRENT in config:
-        conf = config[CONF_MAX_AC_CURRENT]
-        var = cg.new_Pvariable(conf[CONF_ID])
-        await cg.register_component(var, conf)
-        await number.register_number(
-            var,
-            conf,
-            min_value=conf[CONF_MIN_VALUE],
-            max_value=conf[CONF_MAX_VALUE],
-            step=conf[CONF_STEP],
-        )
-        cg.add(getattr(hub, "register_input")(var))
-        cg.add(var.set_parent(hub, 0x109))
-        cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
-        cg.add(var.set_resend(conf[CONF_RESEND]))
-
-    if CONF_FAN_DUTY_CYCLE in config:
-        conf = config[CONF_FAN_DUTY_CYCLE]
-        var = cg.new_Pvariable(conf[CONF_ID])
-        await cg.register_component(var, conf)
-        await number.register_number(
-            var,
-            conf,
-            min_value=conf[CONF_MIN_VALUE],
-            max_value=conf[CONF_MAX_VALUE],
-            step=conf[CONF_STEP],
-        )
-        cg.add(getattr(hub, "register_input")(var))
-        cg.add(var.set_parent(hub, 0x114))
-        cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
-        cg.add(var.set_resend(conf[CONF_RESEND]))
+    for (number_name, register_id) in REGISTER_IDS.items():
+        if number_name in config:
+            conf = config[number_name]
+            var = cg.new_Pvariable(conf[CONF_ID])
+            await cg.register_component(var, conf)
+            await number.register_number(
+                var,
+                conf,
+                min_value=conf[CONF_MIN_VALUE],
+                max_value=conf[CONF_MAX_VALUE],
+                step=conf[CONF_STEP],
+            )
+            cg.add(getattr(hub, "register_input")(var))
+            cg.add(var.set_parent(hub, register_id))
+            cg.add(var.set_restore_value(conf[CONF_RESTORE_VALUE]))
+            cg.add(var.set_resend(conf[CONF_RESEND]))
