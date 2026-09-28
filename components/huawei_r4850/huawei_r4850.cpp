@@ -524,6 +524,8 @@ void HuaweiR4850Component::handle_status_update_(uint8_t error_type, uint16_t re
       bool input_power_failure = status_flags & (1 << 29);
       this->publish_sensor_state_(this->ac_present_binary_sensor_, !input_power_failure);
 #endif // USE_BINARY_SENSOR
+      ESP_LOGV(TAG, "%s Status flags: %02x %02x %02x %02x %02x %02x",
+        this->get_addr_log_str(), register_id, data[0], data[1], data[2], data[3], data[4], data[5]);
       break;
     }
 
