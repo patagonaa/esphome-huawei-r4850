@@ -62,13 +62,14 @@ void HuaweiR4850Number::send_state_(float value) {
       if (nominal_current.has_value()) {
         int32_t raw = value / nominal_current.value() * 1024.0f;
         if (raw > 1250) {
-          ESP_LOGW(TAG, "Can't set current limit above max. current, setting to max (%.2fA)", nominal_current.value() / 1024.0f * 1250.0f);
+          ESP_LOGW(TAG, "%s Can't set current limit above max. current, setting to max (%.2fA)",
+            parent_->get_addr_log_str(), nominal_current.value() / 1024.0f * 1250.0f);
           raw = 1250;
         }
         std::vector<uint8_t> data = {0x00, 0x00, (uint8_t)((raw >> 24) & 0xFF), (uint8_t)((raw >> 16) & 0xFF), (uint8_t)((raw >> 8) & 0xFF), (uint8_t)(raw & 0xFF)};
         this->parent_->set_value(this->registerId_, data);
       } else {
-        ESP_LOGW(TAG, "Can't set current limit without nominal current");
+        ESP_LOGW(TAG, "%s Can't set current limit without nominal current", parent_->get_addr_log_str());
       }
       break;
     }
@@ -122,7 +123,7 @@ void HuaweiR4850Number::handle_update(uint16_t register_id, std::vector<uint8_t>
         int32_t raw = (data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5];
         value = raw / 1024.0f * nominal_current.value();
       } else {
-        ESP_LOGW(TAG, "Can't set current limit without nominal current");
+        ESP_LOGW(TAG, "%s Can't set current limit without nominal current", parent_->get_addr_log_str());
         value = NAN;
       }
       break;
