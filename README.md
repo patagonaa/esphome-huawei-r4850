@@ -53,12 +53,12 @@ When using multiple PSUs on a single bus with `psu_address`, PSUs can change the
 If is this is an issue (for example when PSUs are on different phases or are used to charge different batteries, etc.),
 PSUs can instead be addressed by their `slot_id`.
 The slot id depends on how the slot detect pins are wired up:
-| bottom slot detect pin  | top slot detect pin | slot_id value |
-|-------------------------|---------------------|---------------|
-| pulled to ground        | pulled to ground    | 0x0101        |
-| 6.3k resistor to ground | pulled to ground    | 0x0102        |
-| 10k resistor to ground  | pulled to ground    | 0x0103        |
-| 10k resistor to ground  | pulled to 0.5V      | 0x0203        |
+| top slot detect pin | bottom slot detect pin  | slot_id value |
+|---------------------|-------------------------|---------------|
+| pulled to ground    | pulled to ground        | 0x0101        |
+| pulled to ground    | 6.3k resistor to ground | 0x0102        |
+| pulled to ground    | 10k resistor to ground  | 0x0103        |
+| pulled to 0.5V      | 10k resistor to ground  | 0x0203        |
 
 For the full list of possible slot detect values, see [patagonaa/huawei-r48xx#slot-id](https://github.com/patagonaa/huawei-r48xx#slot-id)
 
