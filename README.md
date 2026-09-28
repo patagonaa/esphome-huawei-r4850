@@ -56,9 +56,9 @@ The slot id depends on how the slot detect pins are wired up:
 | bottom slot detect pin  | top slot detect pin | slot_id value |
 |-------------------------|---------------------|---------------|
 | pulled to ground        | pulled to ground    | 0x0101        |
-| 6.3k resistor to ground | pulled to ground    | 0x0201        |
-| 10k resistor to ground  | pulled to ground    | 0x0301        |
-| 10k resistor to ground  | pulled to 0.5V      | 0x0302        |
+| 6.3k resistor to ground | pulled to ground    | 0x0102        |
+| 10k resistor to ground  | pulled to ground    | 0x0103        |
+| 10k resistor to ground  | pulled to 0.5V      | 0x0203        |
 
 For the full list of possible slot detect values, see [patagonaa/huawei-r48xx#slot-id](https://github.com/patagonaa/huawei-r48xx#slot-id)
 
