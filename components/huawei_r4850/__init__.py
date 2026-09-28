@@ -2,6 +2,7 @@ import esphome.codegen as cg
 from esphome.components.canbus import CanbusComponent
 import esphome.config_validation as cv
 from esphome.const import CONF_ID
+from esphome.types import ConfigType
 
 MULTI_CONF = True
 
@@ -31,7 +32,7 @@ CONFIG_SCHEMA = cv.Schema(
 ).extend(cv.polling_component_schema("5s"))
 
 
-async def to_code(config):
+async def to_code(config: ConfigType) -> None:
     canbus = await cg.get_variable(config[CONF_CANBUS_ID])
     canbus_var = cg.new_Pvariable(config[CONF_ID], canbus)
     await cg.register_component(canbus_var, config)

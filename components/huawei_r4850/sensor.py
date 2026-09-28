@@ -22,7 +22,8 @@ from esphome.const import (
     UNIT_VOLT,
     UNIT_WATT,
 )
-
+from esphome.cpp_generator import MockObj
+from esphome.types import ConfigType
 from . import CONF_HUAWEI_R4850_ID, HUAWEI_R4850_COMPONENT_SCHEMA
 
 ICON_CURRENT_DC = "mdi:current-dc"
@@ -161,14 +162,14 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
 )
 
 
-async def setup_conf(config, key, hub):
+async def setup_conf(config: ConfigType, key: str, hub: MockObj) -> None:
     if key in config:
         conf = config[key]
         sens = await sensor.new_sensor(conf)
         cg.add(getattr(hub, f"set_{key}_sensor")(sens))
 
 
-async def to_code(config):
+async def to_code(config: ConfigType) -> None:
     hub = await cg.get_variable(config[CONF_HUAWEI_R4850_ID])
     for key in TYPES:
         await setup_conf(config, key, hub)

@@ -17,7 +17,7 @@ from esphome.const import (
     UNIT_PERCENT,
     UNIT_VOLT,
 )
-
+from esphome.types import ConfigType
 from .. import CONF_HUAWEI_R4850_ID, HUAWEI_R4850_COMPONENT_SCHEMA, huawei_r4850_ns
 
 ICON_CURRENT_DC = "mdi:current-dc"
@@ -134,7 +134,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
 )
 
 
-async def to_code(config):
+async def to_code(config: ConfigType) -> None:
     hub = await cg.get_variable(config[CONF_HUAWEI_R4850_ID])
     if CONF_OUTPUT_VOLTAGE in config:
         conf = config[CONF_OUTPUT_VOLTAGE]
@@ -223,8 +223,8 @@ async def to_code(config):
         await number.register_number(
             var,
             conf,
-            min_value=0.0,
-            max_value=100.0,
+            min_value=conf[CONF_MIN_VALUE],
+            max_value=conf[CONF_MAX_VALUE],
             step=conf[CONF_STEP],
         )
         cg.add(getattr(hub, "register_input")(var))

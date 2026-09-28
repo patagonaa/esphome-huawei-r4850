@@ -8,7 +8,7 @@ from esphome.const import (
     ICON_FAN,
     ICON_POWER,
 )
-
+from esphome.types import ConfigType
 from .. import CONF_HUAWEI_R4850_ID, HUAWEI_R4850_COMPONENT_SCHEMA, huawei_r4850_ns
 
 CONF_RESEND = "resend"
@@ -46,7 +46,7 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
 )
 
 
-async def to_code(config):
+async def to_code(config: ConfigType) -> None:
     hub = await cg.get_variable(config[CONF_HUAWEI_R4850_ID])
     if CONF_FAN_SPEED_MAX in config:
         conf = config[CONF_FAN_SPEED_MAX]
