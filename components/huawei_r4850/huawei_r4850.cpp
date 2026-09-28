@@ -118,6 +118,11 @@ void HuaweiR4850Component::set_init_status_(R4850InitStatus init_status) {
     this->handle_psu_connectivity_(false);
     break;
 
+  case R4850InitStatus::AddressConflict:
+    this->init_status_ = init_status;
+    this->handle_psu_connectivity_(false);
+    break;
+
   case R4850InitStatus::Init:
     this->init_status_ = init_status;
     this->last_unsolicited_message_ = 0;
@@ -172,6 +177,10 @@ void HuaweiR4850Component::loop() {
       }
       break;
     }
+
+    case R4850InitStatus::AddressConflict:
+      // do nothing, wait until the address conflict gets resolved by a new negotiation
+      break;
 
     case R4850InitStatus::Init:
     {
@@ -646,11 +655,13 @@ void HuaweiR4850Component::handle_info_for_slot_id_(uint8_t psu_addr, const std:
 
       // once it's set, keep looking for more responses with the same
       // slot id but different address to detect conflicts
-      if (this->psu_addr_.has_value() && this->psu_addr_.value() != psu_addr) {
+      if (this->init_status_ != R4850InitStatus::AddressConflict &&
+          this->psu_addr_.has_value() && this->psu_addr_.value() != psu_addr) {
         ESP_LOGE(TAG,
           "%s detected slot id conflict: address %" PRIu8 " and %" PRIu8 " both have slot id %04" PRIx16,
           this->get_addr_log_str(), this->psu_addr_.value(), psu_addr, slot_id
         );
+        this->set_init_status_(R4850InitStatus::AddressConflict);
       }
     }
   }

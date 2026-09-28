@@ -28,6 +28,7 @@ class HuaweiR4850Input {
 
 enum class R4850InitStatus {
   NegotiatingAddress,
+  AddressConflict,
   Init,
   GetAddressBySlot,
   WaitForUnsolicited,
