@@ -77,16 +77,16 @@ class HuaweiR4850Component : public PollingComponent {
 
 #ifdef USE_SENSOR
   void set_fan_duty_cycle_min_sensor(sensor::Sensor *fan_duty_cycle_min_sensor) {
-    fan_duty_cycle_min_sensor_ = fan_duty_cycle_min_sensor;
-    needs_fan_status_ = true;
+    this->fan_duty_cycle_min_sensor_ = fan_duty_cycle_min_sensor;
+    this->needs_fan_status_ = true;
   }
   void set_fan_duty_cycle_target_sensor(sensor::Sensor *fan_duty_cycle_target_sensor) {
-    fan_duty_cycle_target_sensor_ = fan_duty_cycle_target_sensor;
-    needs_fan_status_ = true;
+    this->fan_duty_cycle_target_sensor_ = fan_duty_cycle_target_sensor;
+    this->needs_fan_status_ = true;
   }
   void set_fan_rpm_sensor(sensor::Sensor *fan_rpm_sensor) {
-    fan_rpm_sensor_ = fan_rpm_sensor;
-    needs_fan_status_ = true;
+    this->fan_rpm_sensor_ = fan_rpm_sensor;
+    this->needs_fan_status_ = true;
   }
 #endif // USE_SENSOR
 
@@ -103,7 +103,7 @@ class HuaweiR4850Component : public PollingComponent {
   }
 
   esphome::optional<float> get_psu_nominal_current() {
-    return psu_nominal_current_;
+    return this->psu_nominal_current_;
   }
 
   void set_resend_interval(uint32_t interval);

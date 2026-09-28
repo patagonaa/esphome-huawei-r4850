@@ -103,7 +103,7 @@ void HuaweiR4850Component::set_resend_interval(uint32_t interval) {
 }
 
 void HuaweiR4850Component::resend_inputs() {
-  if (init_status_ == R4850InitStatus::Ready) {
+  if (this->init_status_ == R4850InitStatus::Ready) {
     for (auto &input : this->registered_inputs_) {
       input->handle_resend();
     }
@@ -120,7 +120,7 @@ void HuaweiR4850Component::set_init_status_(R4850InitStatus init_status) {
   case R4850InitStatus::Init:
     init_status_ = init_status;
 #ifdef USE_BINARY_SENSOR
-    this->publish_sensor_state_(canbus_connectivity_binary_sensor_, false);
+    this->publish_sensor_state_(this->canbus_connectivity_binary_sensor_, false);
 #endif // USE_BINARY_SENSOR
     handle_timeout_();
     last_unsolicited_message_ = 0;
@@ -150,7 +150,7 @@ void HuaweiR4850Component::set_init_status_(R4850InitStatus init_status) {
   case R4850InitStatus::Ready:
     init_status_ = init_status;
 #ifdef USE_BINARY_SENSOR
-    this->publish_sensor_state_(canbus_connectivity_binary_sensor_, true);
+    this->publish_sensor_state_(this->canbus_connectivity_binary_sensor_, true);
 #endif // USE_BINARY_SENSOR
     for (auto &input : this->registered_inputs_) {
       input->handle_connected();
@@ -296,7 +296,7 @@ void HuaweiR4850Component::loop() {
 }
 
 void HuaweiR4850Component::update() {
-  if (init_status_ == R4850InitStatus::Ready) {
+  if (this->init_status_ == R4850InitStatus::Ready) {
     ESP_LOGD(TAG, "%s Sending data request message", get_addr_log_str());
     {
       uint32_t canId = this->canid_pack_(R48xx_PROTO_SMU, this->psu_addr_.value(), R48xx_CMD_DATA, true, false);
@@ -320,7 +320,7 @@ void HuaweiR4850Component::set_value(uint16_t register_id, std::vector<uint8_t> 
     return;
   }
 
-  if (init_status_ != R4850InitStatus::Ready) {
+  if (this->init_status_ != R4850InitStatus::Ready) {
     ESP_LOGW(TAG, "%s Value %03x set error: not ready", get_addr_log_str(), register_id);
     return;
   }
@@ -370,13 +370,13 @@ void HuaweiR4850Component::on_frame(uint32_t can_id, bool extended_id, bool rtr,
     std::vector<uint8_t> data(message.begin() + 2, message.end());
 
     if (cmd == R48xx_CMD_DATA || cmd == R48xx_CMD_REGISTER_GET) {
-      handle_status_update_(error_type, register_id, data);
+      this->handle_status_update_(error_type, register_id, data);
     } else if (cmd == R48xx_CMD_CONTROL) {
-      handle_control_update_(error_type, register_id, data);
+      this->handle_control_update_(error_type, register_id, data);
     } else if (cmd == R48xx_CMD_ELABEL) {
-      handle_elabel_(incomplete, register_id, data);
+      this->handle_elabel_(incomplete, register_id, data);
     } else if (cmd == R48xx_CMD_INFO) {
-      handle_info_(incomplete, register_id, data);
+      this->handle_info_(incomplete, register_id, data);
     }
   }
 }
@@ -561,11 +561,11 @@ void HuaweiR4850Component::handle_elabel_(bool incomplete, uint16_t register_id,
   }
 
   // Compose the full response string until complete
-  raw_elabel_response_ += std::string(data.cbegin(), data.cend());
+  this->raw_elabel_response_ += std::string(data.cbegin(), data.cend());
 
   if (!incomplete) {
-    ELabelResponse elabel_response = parse_elabel_response(raw_elabel_response_);
-    raw_elabel_response_.clear();
+    ELabelResponse elabel_response = parse_elabel_response(this->raw_elabel_response_);
+    this->raw_elabel_response_.clear();
 
 #ifdef ESPHOME_LOG_HAS_DEBUG
     for (auto const &[key, value] : elabel_response) {
@@ -575,10 +575,10 @@ void HuaweiR4850Component::handle_elabel_(bool incomplete, uint16_t register_id,
 
 #ifdef USE_TEXT_SENSOR
     std::map<std::string, text_sensor::TextSensor*> sensor_mappings = {
-      {"BoardType", board_type_text_sensor_},
-      {"BarCode", serial_number_text_sensor_},
-      {"Item", item_text_sensor_},
-      {"Model", model_text_sensor_},
+      {"BoardType", this->board_type_text_sensor_},
+      {"BarCode", this->serial_number_text_sensor_},
+      {"Item", this->item_text_sensor_},
+      {"Model", this->model_text_sensor_},
     };
 
     for (auto const &[key, sensor] : sensor_mappings) {
@@ -587,7 +587,7 @@ void HuaweiR4850Component::handle_elabel_(bool incomplete, uint16_t register_id,
       }
     }
 #endif // USE_TEXT_SENSOR
-    has_received_elabel_response_ = true;
+    this->has_received_elabel_response_ = true;
   }
 }
 
@@ -601,7 +601,7 @@ void HuaweiR4850Component::handle_info_(bool incomplete, uint16_t register_id, s
     case R48xx_INFO_CHARACTERISTIC_DATA:
     {
       uint16_t raw_value = (data[2] << 8) | data[3];
-      psu_nominal_current_ = (raw_value & 0x3FF) >> 1;
+      this->psu_nominal_current_ = (raw_value & 0x3FF) >> 1;
       ESP_LOGV(TAG, "%s Nominal current: %f", get_addr_log_str(), psu_nominal_current_.value());
       break;
     }
@@ -610,8 +610,8 @@ void HuaweiR4850Component::handle_info_(bool incomplete, uint16_t register_id, s
       break;
   }
 
-  if (psu_nominal_current_.has_value() && !incomplete) {
-    has_received_info_response_ = true;
+  if (this->psu_nominal_current_.has_value() && !incomplete) {
+    this->has_received_info_response_ = true;
   }
 }
 

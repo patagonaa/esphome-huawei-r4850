@@ -38,7 +38,7 @@ CONFIG_SCHEMA = cv.All(
 )
 
 
-async def to_code(config):
+async def to_code(config: ConfigType) -> None:
     canbus = await cg.get_variable(config[CONF_CANBUS_ID])
     canbus_var = cg.new_Pvariable(config[CONF_ID], canbus)
     await cg.register_component(canbus_var, config)

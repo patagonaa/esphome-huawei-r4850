@@ -8,13 +8,18 @@ from esphome.const import (
     ICON_FAN,
     ICON_POWER,
 )
-
+from esphome.types import ConfigType
 from .. import CONF_HUAWEI_R4850_ID, HUAWEI_R4850_COMPONENT_SCHEMA, huawei_r4850_ns
 
 CONF_RESEND = "resend"
 
 CONF_FAN_SPEED_MAX = "fan_speed_max"
 CONF_STANDBY = "standby"
+
+REGISTER_IDS = {
+    CONF_FAN_SPEED_MAX: 0x134,
+    CONF_STANDBY: 0x132,
+}
 
 HuaweiR4850Switch = huawei_r4850_ns.class_(
     "HuaweiR4850Switch", switch.Switch, cg.Component
@@ -23,7 +28,9 @@ HuaweiR4850Switch = huawei_r4850_ns.class_(
 CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
     {
         cv.Optional(CONF_FAN_SPEED_MAX): switch.switch_schema(
-            HuaweiR4850Switch, icon=ICON_FAN, entity_category=ENTITY_CATEGORY_CONFIG
+            HuaweiR4850Switch,
+            icon=ICON_FAN,
+            entity_category=ENTITY_CATEGORY_CONFIG
         ).extend(
             {
                 cv.Optional(CONF_RESTORE_MODE, default="RESTORE_DEFAULT_OFF"): cv.enum(
@@ -33,7 +40,9 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
             }
         ),
         cv.Optional(CONF_STANDBY): switch.switch_schema(
-            HuaweiR4850Switch, icon=ICON_POWER, entity_category=ENTITY_CATEGORY_CONFIG
+            HuaweiR4850Switch,
+            icon=ICON_POWER,
+            entity_category=ENTITY_CATEGORY_CONFIG
         ).extend(
             {
                 cv.Optional(CONF_RESTORE_MODE, default="RESTORE_DEFAULT_OFF"): cv.enum(
@@ -46,24 +55,16 @@ CONFIG_SCHEMA = HUAWEI_R4850_COMPONENT_SCHEMA.extend(
 )
 
 
-async def to_code(config):
+async def to_code(config: ConfigType) -> None:
     hub = await cg.get_variable(config[CONF_HUAWEI_R4850_ID])
-    if CONF_FAN_SPEED_MAX in config:
-        conf = config[CONF_FAN_SPEED_MAX]
-        var = cg.new_Pvariable(conf[CONF_ID])
-        await cg.register_component(var, conf)
-        await switch.register_switch(var, conf)
-        cg.add(getattr(hub, "register_input")(var))
-        cg.add(var.set_parent(hub, 0x134))
-        cg.add(var.set_restore_mode(conf[CONF_RESTORE_MODE]))
-        cg.add(var.set_resend(conf[CONF_RESEND]))
 
-    if CONF_STANDBY in config:
-        conf = config[CONF_STANDBY]
-        var = cg.new_Pvariable(conf[CONF_ID])
-        await cg.register_component(var, conf)
-        await switch.register_switch(var, conf)
-        cg.add(getattr(hub, "register_input")(var))
-        cg.add(var.set_parent(hub, 0x132))
-        cg.add(var.set_restore_mode(conf[CONF_RESTORE_MODE]))
-        cg.add(var.set_resend(conf[CONF_RESEND]))
+    for (switch_name, register_id) in REGISTER_IDS.items():
+        if switch_name in config:
+            conf = config[switch_name]
+            var = cg.new_Pvariable(conf[CONF_ID])
+            await cg.register_component(var, conf)
+            await switch.register_switch(var, conf)
+            cg.add(getattr(hub, "register_input")(var))
+            cg.add(var.set_parent(hub, register_id))
+            cg.add(var.set_restore_mode(conf[CONF_RESTORE_MODE]))
+            cg.add(var.set_resend(conf[CONF_RESEND]))
