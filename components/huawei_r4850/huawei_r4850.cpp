@@ -530,7 +530,8 @@ void HuaweiR4850Component::handle_status_update_(uint8_t error_type, uint16_t re
     }
 
     default:
-      ESP_LOGV(TAG, "%s Unknown status value %03x: %02x %02x %02x %02x %02x %02x", this->get_addr_log_str(), register_id, data[0], data[1], data[2], data[3], data[4], data[5]);
+      ESP_LOGV(TAG, "%s Unknown status value %03x: %02x %02x %02x %02x %02x %02x",
+        this->get_addr_log_str(), register_id, data[0], data[1], data[2], data[3], data[4], data[5]);
       break;
   }
 }
@@ -546,7 +547,8 @@ void HuaweiR4850Component::handle_control_update_(uint8_t error_type, uint16_t r
     for (auto &input : this->registered_inputs_) {
       input->handle_update(register_id, data);
     }
-    ESP_LOGD(TAG, "%s Value %03x set OK: %02x %02x %02x %02x %02x %02x", this->get_addr_log_str(), register_id, data[0], data[1], data[2], data[3], data[4], data[5]);
+    ESP_LOGD(TAG, "%s Value %03x set OK: %02x %02x %02x %02x %02x %02x",
+      this->get_addr_log_str(), register_id, data[0], data[1], data[2], data[3], data[4], data[5]);
   } else {
     for (auto &input : this->registered_inputs_) {
       input->handle_error(register_id, data);
