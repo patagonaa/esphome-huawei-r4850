@@ -13,7 +13,7 @@
 
 namespace esphome::huawei_r4850 {
 
-static const char *const TAG = "huawei_r4850";
+ESPHOME_LOG_TAG(TAG, "huawei_r4850");
 
 static constexpr uint8_t R48xx_PROTO_PSU = 0x20; // PSU to PSU
 static constexpr uint8_t R48xx_PROTO_SMU = 0x21; // Controller to PSU (SMU = "Site Monitoring Unit")

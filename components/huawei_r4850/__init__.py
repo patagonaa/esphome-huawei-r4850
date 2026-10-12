@@ -5,6 +5,8 @@ from esphome.const import CONF_ID
 import esphome.final_validate as fv
 from esphome.types import ConfigType
 
+CODEOWNERS = ["@patagonaa"]
+DOMAIN = "huawei_r4850"
 MULTI_CONF = True
 
 CONF_CANBUS_ID = "canbus_id"

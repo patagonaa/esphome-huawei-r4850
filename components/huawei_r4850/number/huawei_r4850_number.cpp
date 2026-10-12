@@ -4,7 +4,7 @@
 
 namespace esphome::huawei_r4850 {
 
-static const char *const TAG = "huawei_r4850.number";
+ESPHOME_LOG_TAG(TAG, "huawei_r4850.number");
 
 static constexpr uint16_t SET_VOLTAGE_FUNCTION = 0x100;
 static constexpr uint16_t SET_DEFAULT_VOLTAGE_FUNCTION = 0x101;
