@@ -38,7 +38,7 @@ enum class R4850InitStatus {
   Ready,
 };
 
-class HuaweiR4850Component : public PollingComponent {
+class HuaweiR4850Component final : public PollingComponent {
 #ifdef USE_SENSOR
   SUB_SENSOR(operating_hours)
   SUB_SENSOR(input_voltage)

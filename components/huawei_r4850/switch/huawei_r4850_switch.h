@@ -10,7 +10,7 @@
 
 namespace esphome::huawei_r4850 {
 
-class HuaweiR4850Switch : public switch_::Switch, public Component, public HuaweiR4850Input {
+class HuaweiR4850Switch final : public switch_::Switch, public Component, public HuaweiR4850Input {
  public:
   void setup() override;
 

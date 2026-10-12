@@ -10,7 +10,7 @@
 
 namespace esphome::huawei_r4850 {
 
-class HuaweiR4850Number : public number::Number, public Component, public HuaweiR4850Input {
+class HuaweiR4850Number final : public number::Number, public Component, public HuaweiR4850Input {
  public:
   void setup() override;
 
