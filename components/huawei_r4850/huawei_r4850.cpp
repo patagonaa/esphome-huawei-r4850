@@ -11,8 +11,7 @@
 #include "esphome/core/component.h"
 #include "esphome/core/log.h"
 
-namespace esphome {
-namespace huawei_r4850 {
+namespace esphome::huawei_r4850 {
 
 static const char *const TAG = "huawei_r4850";
 
@@ -689,5 +688,4 @@ void HuaweiR4850Component::canid_unpack_(uint32_t canId, uint8_t *proto, uint8_t
   *incomplete     = (canId & 0x00000001);
 }
 
-}  // namespace huawei_r4850
-}  // namespace esphome
+}  // namespace esphome::huawei_r4850

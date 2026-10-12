@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "esphome/core/defines.h"
 #include "esphome/core/component.h"
 #ifdef USE_SENSOR
@@ -13,8 +15,7 @@
 #endif
 #include "esphome/components/canbus/canbus.h"
 
-namespace esphome {
-namespace huawei_r4850 {
+namespace esphome::huawei_r4850 {
 
 class HuaweiR4850Input {
  public:
@@ -103,7 +104,7 @@ class HuaweiR4850Component : public PollingComponent {
     this->psu_slot_id_ = value;
   }
 
-  esphome::optional<float> get_psu_nominal_current() {
+  std::optional<float> get_psu_nominal_current() {
     return this->psu_nominal_current_;
   }
 
@@ -112,8 +113,8 @@ class HuaweiR4850Component : public PollingComponent {
 
  protected:
   canbus::Canbus *canbus;
-  esphome::optional<uint8_t> psu_addr_{};
-  esphome::optional<uint16_t> psu_slot_id_{};
+  std::optional<uint8_t> psu_addr_{};
+  std::optional<uint16_t> psu_slot_id_{};
   char addr_log_str_[16]{};
 
   uint32_t last_renegotiation_message_{0};
@@ -131,7 +132,7 @@ class HuaweiR4850Component : public PollingComponent {
   std::string raw_elabel_response_;
 
   bool has_received_info_response_ = false;
-  esphome::optional<float> psu_nominal_current_{};
+  std::optional<float> psu_nominal_current_{};
 
 #ifdef USE_SENSOR
   void publish_sensor_state_(sensor::Sensor *sensor, float state) {
@@ -177,5 +178,4 @@ class HuaweiR4850Component : public PollingComponent {
   void canid_unpack_(uint32_t canId, uint8_t *proto, uint8_t *addr, uint8_t *command, bool *src_controller, bool *incomplete);
 };
 
-}  // namespace huawei_r4850
-}  // namespace esphome
+}  // namespace esphome::huawei_r4850

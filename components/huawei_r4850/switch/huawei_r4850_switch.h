@@ -1,13 +1,14 @@
 #pragma once
+
 #include "../huawei_r4850.h"
+
+#include <optional>
+
 #include "esphome/core/component.h"
 #include "esphome/core/preferences.h"
 #include "esphome/components/switch/switch.h"
 
-#include <optional>
-
-namespace esphome {
-namespace huawei_r4850 {
+namespace esphome::huawei_r4850 {
 
 class HuaweiR4850Switch : public switch_::Switch, public Component, public HuaweiR4850Input {
  public:
@@ -39,5 +40,4 @@ class HuaweiR4850Switch : public switch_::Switch, public Component, public Huawe
   ESPPreferenceObject pref_;
 };
 
-}  // namespace huawei_r4850
-}  // namespace esphome
+}  // namespace esphome::huawei_r4850

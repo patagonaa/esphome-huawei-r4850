@@ -1,16 +1,16 @@
 #include "huawei_r4850_switch.h"
+
 #include "esphome/core/log.h"
 
-namespace esphome {
-namespace huawei_r4850 {
+namespace esphome::huawei_r4850 {
 
 static const int16_t SET_FAN_SPEED_MAX_FUNCTION = 0x134;
 static const int16_t SET_STANDBY_FUNCTION = 0x132;
 
 void HuaweiR4850Switch::setup() {
-  optional<bool> initial_state = this->get_initial_state_with_restore_mode();
+  std::optional<bool> initial_state = this->get_initial_state_with_restore_mode();
 
-   if (initial_state.has_value())
+  if (initial_state.has_value())
     this->write_state(initial_state.value());
 }
 
@@ -56,5 +56,4 @@ void HuaweiR4850Switch::handle_timeout() {
 
 }
 
-}  // namespace huawei_r4850
-}  // namespace esphome
+}  // namespace esphome::huawei_r4850

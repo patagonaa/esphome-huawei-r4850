@@ -1,10 +1,10 @@
 #include "huawei_r4850_number.h"
+
 #include "esphome/core/log.h"
 
-namespace esphome {
-namespace huawei_r4850 {
+namespace esphome::huawei_r4850 {
 
-static const char *const TAG = "huawei_r4850_number";
+static const char *const TAG = "huawei_r4850.number";
 
 static const uint16_t SET_VOLTAGE_FUNCTION = 0x100;
 static const uint16_t SET_DEFAULT_VOLTAGE_FUNCTION = 0x101;
@@ -58,7 +58,7 @@ void HuaweiR4850Number::send_state_(float value) {
     case SET_CURRENT_FUNCTION:
     case SET_DEFAULT_CURRENT_FUNCTION:
     {
-      esphome::optional<float> nominal_current = this->parent_->get_psu_nominal_current();
+      std::optional<float> nominal_current = this->parent_->get_psu_nominal_current();
       if (nominal_current.has_value()) {
         int32_t raw = value / nominal_current.value() * 1024.0f;
         if (raw > 1250) {
@@ -118,7 +118,7 @@ void HuaweiR4850Number::handle_update(uint16_t register_id, std::vector<uint8_t>
     case SET_CURRENT_FUNCTION:
     case SET_DEFAULT_CURRENT_FUNCTION:
     {
-      esphome::optional<float> nominal_current = this->parent_->get_psu_nominal_current();
+      std::optional<float> nominal_current = this->parent_->get_psu_nominal_current();
       if (nominal_current.has_value()) {
         int32_t raw = (data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5];
         value = raw / 1024.0f * nominal_current.value();
@@ -186,5 +186,4 @@ void HuaweiR4850Number::handle_timeout() {
   this->publish_state(NAN);
 }
 
-}  // namespace huawei_r4850
-}  // namespace esphome
+}  // namespace esphome::huawei_r4850
