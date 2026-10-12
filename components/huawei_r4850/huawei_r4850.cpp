@@ -15,40 +15,40 @@ namespace esphome::huawei_r4850 {
 
 static const char *const TAG = "huawei_r4850";
 
-static const uint8_t R48xx_PROTO_PSU = 0x20; // PSU to PSU
-static const uint8_t R48xx_PROTO_SMU = 0x21; // Controller to PSU (SMU = "Site Monitoring Unit")
+static constexpr uint8_t R48xx_PROTO_PSU = 0x20; // PSU to PSU
+static constexpr uint8_t R48xx_PROTO_SMU = 0x21; // Controller to PSU (SMU = "Site Monitoring Unit")
 
-static const uint8_t R48xx_ADDR_BROADCAST = 0x00;
+static constexpr uint8_t R48xx_ADDR_BROADCAST = 0x00;
 
 // PROTO PSU
-static const uint8_t R48xx_CMD_UNSOLICITED = 0x11;
-static const uint8_t R48xx_CMD_ADDR_NEGOTIATION = 0x10;
+static constexpr uint8_t R48xx_CMD_UNSOLICITED = 0x11;
+static constexpr uint8_t R48xx_CMD_ADDR_NEGOTIATION = 0x10;
 
 // PROTO SMU
-static const uint8_t R48xx_CMD_DATA = 0x40;
-static const uint8_t R48xx_CMD_INFO = 0x50;
-static const uint8_t R48xx_CMD_ELABEL = 0xD2;
-static const uint8_t R48xx_CMD_CONTROL = 0x80;
-static const uint8_t R48xx_CMD_REGISTER_GET = 0x82;
+static constexpr uint8_t R48xx_CMD_DATA = 0x40;
+static constexpr uint8_t R48xx_CMD_INFO = 0x50;
+static constexpr uint8_t R48xx_CMD_ELABEL = 0xD2;
+static constexpr uint8_t R48xx_CMD_CONTROL = 0x80;
+static constexpr uint8_t R48xx_CMD_REGISTER_GET = 0x82;
 
-static const uint16_t R48xx_INFO_CHARACTERISTIC_DATA = 0x001;
-static const uint16_t R48xx_INFO_SLOT_ID = 0x006;
+static constexpr uint16_t R48xx_INFO_CHARACTERISTIC_DATA = 0x001;
+static constexpr uint16_t R48xx_INFO_SLOT_ID = 0x006;
 
-static const uint16_t R48xx_DATA_OPERATING_HOURS = 0x10E;
-static const uint16_t R48xx_DATA_INPUT_POWER = 0x170;
-static const uint16_t R48xx_DATA_INPUT_FREQ = 0x171;
-static const uint16_t R48xx_DATA_INPUT_CURRENT = 0x172;
-static const uint16_t R48xx_DATA_OUTPUT_POWER = 0x173;
-static const uint16_t R48xx_DATA_EFFICIENCY = 0x174;
-static const uint16_t R48xx_DATA_OUTPUT_VOLTAGE = 0x175;
-static const uint16_t R48xx_DATA_OUTPUT_CURRENT_MAX = 0x176;
-static const uint16_t R48xx_DATA_INPUT_VOLTAGE = 0x178;
-static const uint16_t R48xx_DATA_OUTPUT_TEMPERATURE = 0x17F;
-static const uint16_t R48xx_DATA_INPUT_TEMPERATURE = 0x180;
-static const uint16_t R48xx_DATA_OUTPUT_CURRENT_FAST = 0x181;
-static const uint16_t R48xx_DATA_OUTPUT_CURRENT_SLOW = 0x182;
-static const uint16_t R48xx_DATA_STATUS_FLAGS = 0x183;
-static const uint16_t R48xx_DATA_FAN_STATUS = 0x187;
+static constexpr uint16_t R48xx_DATA_OPERATING_HOURS = 0x10E;
+static constexpr uint16_t R48xx_DATA_INPUT_POWER = 0x170;
+static constexpr uint16_t R48xx_DATA_INPUT_FREQ = 0x171;
+static constexpr uint16_t R48xx_DATA_INPUT_CURRENT = 0x172;
+static constexpr uint16_t R48xx_DATA_OUTPUT_POWER = 0x173;
+static constexpr uint16_t R48xx_DATA_EFFICIENCY = 0x174;
+static constexpr uint16_t R48xx_DATA_OUTPUT_VOLTAGE = 0x175;
+static constexpr uint16_t R48xx_DATA_OUTPUT_CURRENT_MAX = 0x176;
+static constexpr uint16_t R48xx_DATA_INPUT_VOLTAGE = 0x178;
+static constexpr uint16_t R48xx_DATA_OUTPUT_TEMPERATURE = 0x17F;
+static constexpr uint16_t R48xx_DATA_INPUT_TEMPERATURE = 0x180;
+static constexpr uint16_t R48xx_DATA_OUTPUT_CURRENT_FAST = 0x181;
+static constexpr uint16_t R48xx_DATA_OUTPUT_CURRENT_SLOW = 0x182;
+static constexpr uint16_t R48xx_DATA_STATUS_FLAGS = 0x183;
+static constexpr uint16_t R48xx_DATA_FAN_STATUS = 0x187;
 
 typedef std::map<std::string, std::string> ELabelResponse;
 
@@ -195,7 +195,7 @@ void HuaweiR4850Component::loop() {
 
     case R4850InitStatus::GetAddressBySlot:
     {
-      static const uint32_t broadcast_response_timeout = 5000;
+      static constexpr uint32_t broadcast_response_timeout = 5000;
 
       if (this->psu_addr_.has_value()) {
         ESP_LOGI(TAG,

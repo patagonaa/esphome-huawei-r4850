@@ -6,12 +6,12 @@ namespace esphome::huawei_r4850 {
 
 static const char *const TAG = "huawei_r4850.number";
 
-static const uint16_t SET_VOLTAGE_FUNCTION = 0x100;
-static const uint16_t SET_DEFAULT_VOLTAGE_FUNCTION = 0x101;
-static const uint16_t SET_CURRENT_FUNCTION = 0x103;
-static const uint16_t SET_DEFAULT_CURRENT_FUNCTION = 0x104;
-static const uint16_t SET_INPUT_CURRENT_FUNCTION = 0x109;
-static const uint16_t SET_FAN_DUTY_CYCLE = 0x114;
+static constexpr uint16_t SET_VOLTAGE_FUNCTION = 0x100;
+static constexpr uint16_t SET_DEFAULT_VOLTAGE_FUNCTION = 0x101;
+static constexpr uint16_t SET_CURRENT_FUNCTION = 0x103;
+static constexpr uint16_t SET_DEFAULT_CURRENT_FUNCTION = 0x104;
+static constexpr uint16_t SET_INPUT_CURRENT_FUNCTION = 0x109;
+static constexpr uint16_t SET_FAN_DUTY_CYCLE = 0x114;
 
 void HuaweiR4850Number::setup() {
   if (this->last_state_.has_value()) // something has already set the values
